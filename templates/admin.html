@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StatGolf — Curator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --green-primary:  #1B8A50;
+  --green-fairway:  #2AAD64;
+  --green-rough:    #104530;
+  --gold:           #C9A84C;
+  --gold-light:     #E0C06A;
+  --gold-dim:       rgba(201,168,76,0.4);
+  --bg-body:        #1C4D30;
+  --bg-dark:        #163D25;
+  --bg-mid:         #204530;
+  --bg-card:        #255438;
+  --bg-elevated:    #2C6443;
+  --bg-input:       rgba(0,0,0,0.28);
+  --text-primary:   #EEF8EE;
+  --text-secondary: #C0DCC8;
+  --text-muted:     #96C0A4;
+  --text-dim:       #78A888;
+  --border:         rgba(255,255,255,0.09);
+  --border-strong:  rgba(255,255,255,0.18);
+  --border-gold:    rgba(201,168,76,0.45);
+  --border-gold-b:  #C9A84C;
+  --clip:    8px;
+  --clip-sm: 5px;
+  --shadow:  0 2px 0 rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+  /* Legacy aliases so JS-generated inline styles resolve on dark bg */
+  --gray:    var(--text-muted);
+  --green:   var(--green-fairway);
+  --fairway: var(--green-fairway);
+  --dark:    #0F1E14;
+  --white:   var(--text-primary);
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 16px;
+  background: var(--bg-body);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  color-scheme: dark;  /* native date/number/select controls render dark */
+}
+
+/* ── HEADER ───────────────────────────────────────────────────────────── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px; padding: 0 22px;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-gold);
+  flex-shrink: 0;
+}
+header::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--green-primary) 30%, var(--gold) 70%);
+  pointer-events: none;
+}
+.logo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.6rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-primary); line-height: 1;
+}
+.logo span { color: var(--gold); }
+.logo-sub {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.52rem; letter-spacing: 0.24em;
+  color: var(--text-muted); text-transform: uppercase; margin-top: 3px; line-height: 1;
+}
+.header-right { display: flex; align-items: center; gap: 12px; }
+#adm-user-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.85rem; color: var(--gold-light);
+  letter-spacing: 0.1em; font-weight: 600;
+}
+.header-right a {
+  color: var(--gold); text-decoration: none;
+  font-family: 'Oswald', sans-serif; font-size: 0.75rem;
+  font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  border: 1px solid var(--border-gold); padding: 6px 14px;
+  clip-path: polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+  transition: background 0.15s;
+}
+.header-right a:hover { background: rgba(201,168,76,0.1); }
+
+/* ── BUTTONS ──────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-block; padding: 9px 18px;
+  border: none; cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.82rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  transition: all 0.12s ease;
+  clip-path: polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+}
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-primary  { background: var(--gold); color: #0F1E14; }
+.btn-primary:hover:not(:disabled)   { background: var(--gold-light); }
+.btn-secondary { background: transparent; color: var(--gold); border: 1px solid var(--border-gold); }
+.btn-secondary:hover:not(:disabled) { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+.btn-success  { background: var(--green-primary); color: var(--text-primary); }
+.btn-success:hover:not(:disabled)   { background: var(--green-fairway); }
+.btn-danger   { background: transparent; color: #F07070; border: 1px solid rgba(231,76,60,0.4); }
+.btn-danger:hover:not(:disabled)    { background: rgba(231,76,60,0.12); border-color: #EF4444; }
+.btn-sm { padding: 5px 12px; font-size: 0.74rem; }
+
+/* ── LAYOUT ───────────────────────────────────────────────────────────── */
+.main { max-width: 920px; margin: 0 auto; padding: 22px 20px; }
+
+/* ── TABS ─────────────────────────────────────────────────────────────── */
+.tabs {
+  display: flex; gap: 4px; margin-bottom: 22px;
+  border-bottom: 1px solid var(--border-strong);
+}
+.tab-btn {
+  padding: 9px 18px; border: none; background: none; cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.8rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted); border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-btn:hover:not(.active) { color: var(--text-secondary); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── CARDS ────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-top: 3px solid var(--gold);
+  padding: 20px 22px; margin-bottom: 18px;
+  position: relative; box-shadow: var(--shadow);
+}
+.card::before,.card::after {
+  content: ''; position: absolute; top: -3px;
+  width: 12px; height: 12px;
+  border: 3px solid var(--gold); pointer-events: none;
+}
+.card::before { left: -1px; border-right: none; border-bottom: none; }
+.card::after  { right: -1px; border-left: none;  border-bottom: none; }
+.card-title {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.22em;
+  color: var(--gold); margin-bottom: 16px;
+}
+
+/* ── FORMS ────────────────────────────────────────────────────────────── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-group { margin-bottom: 14px; }
+.form-group label {
+  display: block;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.63rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text-muted); margin-bottom: 6px;
+}
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 9px 12px;
+  background: var(--bg-input);
+  border: none; border-left: 3px solid var(--border-strong);
+  color: var(--text-primary);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.9rem; outline: none; border-radius: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  border-left-color: var(--gold); background: rgba(0,0,0,0.38);
+}
+.form-group input::placeholder, .form-group textarea::placeholder { color: var(--text-dim); }
+.form-group select option { background: var(--bg-elevated); color: var(--text-primary); }
+
+/* ── HOLE TABS ────────────────────────────────────────────────────────── */
+.hole-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+.hole-tab {
+  padding: 8px 20px;
+  border: 1px solid var(--border-strong); background: var(--bg-mid);
+  cursor: pointer;
+  font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 0.8rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted);
+  clip-path: polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.hole-tab.active { border-color: var(--gold); background: var(--bg-elevated); color: var(--gold); }
+.hole-tab:hover:not(.active) { border-color: var(--border-gold); color: var(--text-secondary); }
+
+/* ── CLUB BAG BUILDER ─────────────────────────────────────────────────── */
+.bag-row {
+  display: grid; grid-template-columns: 140px 1fr 120px auto; gap: 8px;
+  align-items: center; margin-bottom: 8px;
+}
+.bag-row select, .bag-row input { margin: 0; }
+.bag-row .rm-btn {
+  padding: 6px 10px; background: transparent; color: #F07070;
+  border: 1px solid rgba(231,76,60,0.4); cursor: pointer;
+  font-family: 'Oswald', sans-serif; font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  clip-path: polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px);
+  transition: background 0.12s;
+}
+.bag-row .rm-btn:hover { background: rgba(231,76,60,0.12); }
+
+/* ── HAZARD BUILDER ───────────────────────────────────────────────────── */
+.hazard-row {
+  display: grid; grid-template-columns: 1fr 1fr 120px auto; gap: 8px;
+  align-items: center; margin-bottom: 8px;
+}
+
+/* ── VALIDATION ───────────────────────────────────────────────────────── */
+.validation-box {
+  padding: 12px 16px; margin-top: 12px;
+  border-left: 4px solid;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.76rem; letter-spacing: 0.04em;
+}
+.validation-box.ok   { background: rgba(27,138,80,0.15);  border-color: var(--green-primary); color: #72C48E; }
+.validation-box.fail { background: rgba(231,76,60,0.12);  border-color: #EF4444; color: #F07070; }
+
+/* ── UPCOMING TABLE ───────────────────────────────────────────────────── */
+.upcoming-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.upcoming-table th, .upcoming-table td {
+  padding: 9px 12px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.upcoming-table th {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.14em;
+  color: var(--text-muted); font-weight: 700;
+}
+.upcoming-table td { color: var(--text-secondary); }
+.upcoming-table tr:hover td { background: rgba(255,255,255,0.03); }
+.badge {
+  display: inline-block; padding: 2px 9px;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  clip-path: polygon(3px 0,100% 0,100% calc(100% - 3px),calc(100% - 3px) 100%,0 100%,0 3px);
+}
+.badge-green { background: rgba(27,138,80,0.2);    color: #72C48E;        border: 1px solid rgba(27,138,80,0.4); }
+.badge-gray  { background: rgba(255,255,255,0.06); color: var(--text-muted); border: 1px solid var(--border-strong); }
+
+/* ── LOGIN OVERLAY ────────────────────────────────────────────────────── */
+#login-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 600;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  backdrop-filter: blur(6px);
+}
+.login-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-gold-b); border-top: 3px solid var(--gold);
+  padding: 32px 28px; width: 360px; max-width: 100%;
+  position: relative;
+  clip-path: polygon(var(--clip) 0,100% 0,100% calc(100% - var(--clip)),calc(100% - var(--clip)) 100%,0 100%,0 var(--clip));
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+}
+.login-box::before,.login-box::after {
+  content: ''; position: absolute; top: -3px;
+  width: 12px; height: 12px; border: 3px solid var(--gold); pointer-events: none;
+}
+.login-box::before { left: -1px; border-right: none; border-bottom: none; }
+.login-box::after  { right: -1px; border-left: none;  border-bottom: none; }
+.login-box h2 {
+  font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 1.4rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  text-align: center; color: var(--text-primary); margin-bottom: 20px;
+}
+.login-box h2 span { color: var(--gold); }
+.error-msg {
+  color: #F07070;
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.72rem; margin-top: 8px;
+}
+
+/* ── TOAST ────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  background: var(--bg-elevated); border: 1px solid var(--border-gold-b);
+  color: var(--text-primary); padding: 11px 26px;
+  font-family: 'Oswald', sans-serif; font-size: 0.88rem; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  z-index: 1000; opacity: 0; transition: opacity 0.2s;
+  pointer-events: none; max-width: 90vw; text-align: center;
+  clip-path: polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+  box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div class="login-box">
+    <h2>Stat<span>Golf</span> Curator</h2>
+    <div class="form-group">
+      <label>Username</label>
+      <input id="adm-username" type="text" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input id="adm-password" type="password" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">Log In</button>
+    <div class="error-msg" id="adm-error"></div>
+  </div>
+</div>
+
+<header>
+  <div>
+    <div class="logo">Stat<span>Golf</span></div>
+    <div class="logo-sub">Curator Console</div>
+  </div>
+  <div class="header-right">
+    <span id="adm-user-label"></span>
+    <a href="/">← Game</a>
+  </div>
+</header>
+
+<div class="main">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('tab-create',this)">Create Puzzle</button>
+    <button class="tab-btn" onclick="showTab('tab-upcoming',this)">Upcoming</button>
+    <button class="tab-btn" onclick="showTab('tab-generate',this)">Generate</button>
+    <button class="tab-btn" onclick="showTab('tab-landmarks',this)">Landmarks</button>
+    <button class="tab-btn" onclick="showTab('tab-playtest',this)">Playtest</button>
+  </div>
+
+  <!-- ── CREATE PUZZLE ──────────────────────────────────────────────── -->
+  <div id="tab-create" class="tab-pane active">
+    <div class="card">
+      <div class="card-title">Puzzle Date</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date (YYYY-MM-DD)</label>
+          <input id="puzzle-date" type="date" value="">
+        </div>
+        <div style="display:flex;align-items:flex-end;padding-bottom:12px">
+          <button class="btn btn-secondary btn-sm" onclick="loadExistingPuzzle()">Load existing</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hole selector -->
+    <div class="hole-tabs">
+      <button class="hole-tab active" onclick="showHoleTab(1)">Hole 1</button>
+      <button class="hole-tab" onclick="showHoleTab(2)">Hole 2</button>
+      <button class="hole-tab" onclick="showHoleTab(3)">Hole 3</button>
+    </div>
+
+    <!-- Hole 1 -->
+    <div id="hole-form-1" class="hole-form">
+      <div class="card">
+        <div class="card-title">Hole 1 — Basics</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Distance (yards)</label>
+            <input type="number" id="h1-target" placeholder="e.g. 6000" min="100" max="99999">
+          </div>
+          <div class="form-group">
+            <label>Par</label>
+            <input type="number" id="h1-par" placeholder="3–6" min="3" max="9">
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="suggestPar(1)">Suggest par</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Club Bag</div>
+        <div id="h1-bag"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addClub(1)">+ Add Club</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Hazard Bands <span style="font-weight:400;font-size:0.8rem;color:var(--gray)">(yards from tee box)</span></div>
+        <div id="h1-hazards"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addHazard(1)">+ Add Hazard</button>
+      </div>
+    </div>
+
+    <!-- Hole 2 -->
+    <div id="hole-form-2" class="hole-form" style="display:none">
+      <div class="card">
+        <div class="card-title">Hole 2 — Basics</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Distance</label>
+            <input type="number" id="h2-target" placeholder="e.g. 2500" min="100" max="99999">
+          </div>
+          <div class="form-group">
+            <label>Par</label>
+            <input type="number" id="h2-par" placeholder="3–6" min="3" max="9">
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="suggestPar(2)">Suggest par</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Club Bag</div>
+        <div id="h2-bag"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addClub(2)">+ Add Club</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Hazard Bands <span style="font-weight:400;font-size:0.8rem;color:var(--gray)">(yards from tee box)</span></div>
+        <div id="h2-hazards"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addHazard(2)">+ Add Hazard</button>
+      </div>
+    </div>
+
+    <!-- Hole 3 -->
+    <div id="hole-form-3" class="hole-form" style="display:none">
+      <div class="card">
+        <div class="card-title">Hole 3 — Basics</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Target Distance</label>
+            <input type="number" id="h3-target" placeholder="e.g. 1000" min="100" max="99999">
+          </div>
+          <div class="form-group">
+            <label>Par</label>
+            <input type="number" id="h3-par" placeholder="3–6" min="3" max="9">
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="suggestPar(3)">Suggest par</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Club Bag</div>
+        <div id="h3-bag"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addClub(3)">+ Add Club</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Hazard Bands <span style="font-weight:400;font-size:0.8rem;color:var(--gray)">(yards from tee box)</span></div>
+        <div id="h3-hazards"></div>
+        <button class="btn btn-secondary btn-sm" onclick="addHazard(3)">+ Add Hazard</button>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <div class="card-title">Save & Publish</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="savePuzzle(false)">Save Draft</button>
+        <button class="btn btn-primary" onclick="validatePuzzle()">Validate</button>
+        <button class="btn btn-success" onclick="savePuzzle(true)">Validate & Publish</button>
+      </div>
+      <div id="validation-result"></div>
+    </div>
+  </div>
+
+  <!-- ── UPCOMING ────────────────────────────────────────────────────── -->
+  <div id="tab-upcoming" class="tab-pane">
+    <div class="card">
+      <div class="card-title">Today's Community (admin-only)</div>
+      <div id="community-stats" style="display:flex;gap:32px;flex-wrap:wrap;font-family:'Oswald',sans-serif">
+        <div><div style="font-size:1.8rem;font-weight:700;color:var(--gold)" id="cs-finished">—</div><div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray)">Players Finished</div></div>
+        <div><div style="font-size:1.8rem;font-weight:700;color:var(--gold)" id="cs-avg">—</div><div style="font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray)">Avg Score</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Upcoming Puzzles</div>
+      <div id="upcoming-list">Loading…</div>
+    </div>
+  </div>
+
+  <!-- ── GENERATE ─────────────────────────────────────────────────────── -->
+  <div id="tab-generate" class="tab-pane">
+    <div class="card">
+      <div class="card-title">Puzzle Generator</div>
+      <p style="font-size:0.85rem;color:var(--gray);margin-bottom:14px">
+        Choose the Driver stat for each hole. Approach clubs are auto-selected in descending top-10% order so each covers less ground than the previous. A bunker flanks the driver landing zone; water is placed randomly.
+      </p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hole 1 Driver</label>
+          <select id="gen-driver-1"><option value="">— Select —</option></select>
+        </div>
+        <div class="form-group">
+          <label>Hole 2 Driver</label>
+          <select id="gen-driver-2"><option value="">— Select —</option></select>
+        </div>
+        <div class="form-group">
+          <label>Hole 3 Driver</label>
+          <select id="gen-driver-3"><option value="">— Select —</option></select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:4px">
+        <div class="form-group" style="margin:0">
+          <label>Target Date</label>
+          <input id="gen-date" type="date" style="width:160px">
+        </div>
+        <button class="btn btn-primary" onclick="generateCandidates()" style="margin-top:18px">Generate 5 Candidates</button>
+      </div>
+      <div id="gen-status" style="margin-top:10px;font-size:0.82rem;color:var(--gray)"></div>
+    </div>
+    <div id="gen-results"></div>
+  </div>
+
+  <!-- ── LANDMARKS ──────────────────────────────────────────────────────── -->
+  <div id="tab-landmarks" class="tab-pane">
+    <div class="card">
+      <div class="card-title">Landmark Stats</div>
+      <p style="font-size:0.85rem;color:var(--gray);margin-bottom:14px">
+        Active landmarks are placed as hazard suggestions in the generator and trigger post-round callouts when players hit near them. Run auto-detection to flag top 2% values as candidates, then promote the ones you want.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-secondary" onclick="detectLandmarks()">Auto-Detect Candidates</button>
+        <button class="btn btn-secondary" onclick="loadLandmarks()">Refresh List</button>
+      </div>
+      <div id="lm-status" style="font-size:0.82rem;color:var(--gray);margin-bottom:10px"></div>
+      <div id="lm-active-section" style="display:none">
+        <div class="card-title" style="color:#065f46;margin-bottom:8px">✓ Active Landmarks</div>
+        <div id="lm-active-list"></div>
+      </div>
+      <div id="lm-candidate-section" style="display:none;margin-top:16px">
+        <div class="card-title" style="margin-bottom:8px">Candidates (not yet active)</div>
+        <div id="lm-candidate-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PLAYTEST ────────────────────────────────────────────────────── -->
+  <div id="tab-playtest" class="tab-pane">
+    <div class="card">
+      <div class="card-title">Playtest a Puzzle</div>
+      <p style="font-size:0.85rem;color:var(--gray);margin-bottom:14px">
+        Starts a fresh round for your account (resets any existing attempt for that date).
+        Plays at the game URL — come back here when done.
+      </p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Date</label>
+          <input id="pt-date" type="date">
+        </div>
+        <div class="form-group">
+          <label>Difficulty</label>
+          <select id="pt-diff">
+            <option value="easy">Easy (gimme 20 yds)</option>
+            <option value="hard">Hard (gimme 10 yds)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="startPlaytest()">Start Playtest</button>
+      <div id="pt-result" style="margin-top:12px;font-size:0.85rem;color:var(--gray)"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="adm-toast"></div>
+
+<script>
+let admToken = null;
+let availableClubs = [];
+let availableCategories = {};
+let categoryHints = {};
+
+const CLUB_NAMES = ["Driver","3-Wood","5-Iron","7-Iron","9-Iron","Sand Wedge","Putter"];
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+async function adminLogin() {
+  const username = document.getElementById('adm-username').value.trim();
+  const password = document.getElementById('adm-password').value;
+  const res = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  if (data.error) {
+    document.getElementById('adm-error').textContent = data.error;
+    return;
+  }
+  if (!data.is_admin) {
+    document.getElementById('adm-error').textContent = 'Admin access required.';
+    return;
+  }
+  admToken = data.token;
+  document.getElementById('adm-user-label').textContent = data.username.toUpperCase();
+  document.getElementById('login-overlay').style.display = 'none';
+  await loadMeta();
+  initForms();
+}
+
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${admToken}` },
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(path, opts);
+  return res.json();
+}
+
+function toast(msg) {
+  const t = document.getElementById('adm-toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── META ──────────────────────────────────────────────────────────────────────
+async function loadMeta() {
+  const data = await api('GET', '/api/admin/categories', null);
+  availableCategories = data.categories || {};
+  availableClubs = data.clubs || CLUB_NAMES;
+  try {
+    const h = await (await fetch('/api/statgolf/hints')).json();
+    categoryHints = h.hints || {};
+  } catch (e) { categoryHints = {}; }
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showTab(id, callerBtn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (callerBtn) callerBtn.classList.add('active');
+  if (id === 'tab-upcoming')  loadUpcoming();
+  if (id === 'tab-landmarks') loadLandmarks();
+  if (id === 'tab-generate') {
+    const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+    if (!document.getElementById('gen-date').value)
+      document.getElementById('gen-date').value = tomorrow.toISOString().slice(0,10);
+  }
+}
+
+function showHoleTab(n) {
+  document.querySelectorAll('.hole-form').forEach(f => f.style.display = 'none');
+  document.querySelectorAll('.hole-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(`hole-form-${n}`).style.display = '';
+  document.querySelectorAll('.hole-tab')[n-1].classList.add('active');
+}
+
+// ── FORM INIT ─────────────────────────────────────────────────────────────────
+function initForms() {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tmStr = tomorrow.toISOString().slice(0,10);
+  document.getElementById('puzzle-date').value = tmStr;
+  document.getElementById('pt-date').value = tmStr;
+  if (!document.getElementById('gen-date').value)
+    document.getElementById('gen-date').value = tmStr;
+  // Populate driver dropdowns with all available stat categories
+  const opts = Object.entries(availableCategories)
+    .map(([k,v]) => `<option value="${k}">${v.label}</option>`)
+    .join('');
+  for (let h = 1; h <= 3; h++) {
+    const sel = document.getElementById(`gen-driver-${h}`);
+    if (sel) sel.innerHTML = '<option value="">— Select category —</option>' + opts;
+    addClub(h);
+  }
+}
+
+// ── CLUB BAG BUILDER ──────────────────────────────────────────────────────────
+function addClub(holeNum) {
+  const container = document.getElementById(`h${holeNum}-bag`);
+  const idx = container.querySelectorAll('.bag-row').length;
+  const defaultClub = idx === 0 ? 'Driver' : (CLUB_NAMES[idx] || '');
+  const row = document.createElement('div');
+  row.className = 'bag-row';
+  row.innerHTML = `
+    <select class="club-name-sel">
+      ${CLUB_NAMES.map(c => `<option value="${c}" ${c === defaultClub ? 'selected' : ''}>${c}</option>`).join('')}
+    </select>
+    <select class="club-cat-sel">
+      <option value="">— Select stat —</option>
+      ${Object.entries(availableCategories).map(([k,v]) =>
+        `<option value="${k}">${v.label}</option>`
+      ).join('')}
+    </select>
+    <span style="font-size:0.75rem;color:var(--gray)" class="club-range-hint"></span>
+    <button class="rm-btn" onclick="this.closest('.bag-row').remove()">✕</button>
+  `;
+  row.querySelector('.club-cat-sel').addEventListener('change', function() {
+    updateRangeHint(this);
+  });
+  container.appendChild(row);
+}
+
+function updateRangeHint(sel) {
+  const cat = sel.value;
+  const hint = sel.closest('.bag-row').querySelector('.club-range-hint');
+  if (!cat) { hint.textContent = ''; return; }
+  const q1 = categoryHints[cat];
+  const unit = (availableCategories[cat] || {}).unit || 'yds';
+  hint.textContent = q1 != null ? `typical ${q1.toLocaleString()}+ ${unit}` : '';
+}
+
+function addHazard(holeNum) {
+  const container = document.getElementById(`h${holeNum}-hazards`);
+  const row = document.createElement('div');
+  row.className = 'hazard-row';
+  row.innerHTML = `
+    <input type="number" placeholder="Start (yds from tee)" min="0">
+    <input type="number" placeholder="End (yds from tee)"   min="0">
+    <select>
+      <option value="bunker">Bunker</option>
+      <option value="water">Water</option>
+    </select>
+    <button class="rm-btn" onclick="this.closest('.hazard-row').remove()">✕</button>
+  `;
+  container.appendChild(row);
+}
+
+// ── READ FORM ─────────────────────────────────────────────────────────────────
+function readHole(n) {
+  const target = parseInt(document.getElementById(`h${n}-target`).value, 10);
+  const par    = parseInt(document.getElementById(`h${n}-par`).value, 10);
+  const bagRows = document.getElementById(`h${n}-bag`).querySelectorAll('.bag-row');
+  const club_bag = [];
+  bagRows.forEach(row => {
+    const club = row.querySelector('.club-name-sel').value;
+    const cat  = row.querySelector('.club-cat-sel').value;
+    if (club && cat) club_bag.push({ club, stat_category: cat });
+  });
+  const hazardRows = document.getElementById(`h${n}-hazards`).querySelectorAll('.hazard-row');
+  const hazard_bands = [];
+  hazardRows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    const fromTeeStart = parseInt(inputs[0].value, 10);
+    const fromTeeEnd   = parseInt(inputs[1].value, 10);
+    const type  = row.querySelector('select').value;
+    // convert from-tee back to remaining yards for storage
+    if (!isNaN(fromTeeStart) && !isNaN(fromTeeEnd)) {
+      hazard_bands.push({ start: target - fromTeeStart, end: target - fromTeeEnd, type });
+    }
+  });
+  return { hole_number: n, target_distance: target, par, club_bag, hazard_bands };
+}
+
+function readAllHoles() {
+  return [readHole(1), readHole(2), readHole(3)];
+}
+
+// ── VALIDATE ──────────────────────────────────────────────────────────────────
+async function validatePuzzle() {
+  const holes = readAllHoles();
+  const data = await api('POST', '/api/admin/validate', { holes, difficulty: 'hard' });
+  const el = document.getElementById('validation-result');
+  if (data.ok) {
+    let html = `<div class="validation-box ok">✓ Solvable on Hard mode`;
+    if (data.suggestions) {
+      html += '<ul style="margin-top:8px;padding-left:16px">' +
+        data.suggestions.map(s => `<li>Hole ${s.hole_number}: suggested par ${s.suggested_par}</li>`).join('') +
+        '</ul>';
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } else {
+    el.innerHTML = `<div class="validation-box fail">✗ ${data.message || data.error}</div>`;
+  }
+}
+
+async function suggestPar(n) {
+  const hole = readHole(n);
+  const data = await api('POST', '/api/admin/validate', { holes: [hole], difficulty: 'easy' });
+  if (data.suggestions && data.suggestions[0]) {
+    document.getElementById(`h${n}-par`).value = data.suggestions[0].suggested_par;
+    toast(`Hole ${n}: suggested par ${data.suggestions[0].suggested_par}`);
+  }
+}
+
+// ── SAVE ──────────────────────────────────────────────────────────────────────
+async function savePuzzle(publish) {
+  const puzzleDate = document.getElementById('puzzle-date').value;
+  if (!puzzleDate) { toast('Enter a date first'); return; }
+  const holes = readAllHoles();
+  const data = await api('POST', '/api/admin/puzzle', { date: puzzleDate, holes, publish });
+  if (data.error) {
+    document.getElementById('validation-result').innerHTML =
+      `<div class="validation-box fail">✗ ${data.error}</div>`;
+    toast('Save failed');
+  } else {
+    toast(publish ? `Published for ${puzzleDate}` : `Draft saved for ${puzzleDate}`);
+    document.getElementById('validation-result').innerHTML =
+      `<div class="validation-box ok">✓ ${publish ? 'Published' : 'Draft saved'} for ${puzzleDate}</div>`;
+  }
+}
+
+// ── LOAD EXISTING ─────────────────────────────────────────────────────────────
+async function loadExistingPuzzle() {
+  const d = document.getElementById('puzzle-date').value;
+  if (!d) { toast('Enter a date'); return; }
+  const data = await api('GET', `/api/admin/puzzle?date=${d}`, null);
+  if (!data.holes || !data.holes.length) { toast('No puzzle found for this date'); return; }
+  data.holes.forEach(hole => fillHoleForm(hole));
+  toast(`Loaded puzzle for ${d}`);
+}
+
+function fillHoleForm(hole) {
+  const n = hole.hole_number;
+  document.getElementById(`h${n}-target`).value = hole.target_distance;
+  document.getElementById(`h${n}-par`).value    = hole.par;
+  const bagContainer = document.getElementById(`h${n}-bag`);
+  bagContainer.innerHTML = '';
+  hole.club_bag.forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'bag-row';
+    row.innerHTML = `
+      <select class="club-name-sel">
+        ${CLUB_NAMES.map(cl => `<option value="${cl}" ${cl === c.club ? 'selected' : ''}>${cl}</option>`).join('')}
+      </select>
+      <select class="club-cat-sel">
+        <option value="">— Select stat —</option>
+        ${Object.entries(availableCategories).map(([k,v]) =>
+          `<option value="${k}" ${k === c.stat_category ? 'selected' : ''}>${v.label}</option>`
+        ).join('')}
+      </select>
+      <span class="club-range-hint"></span>
+      <button class="rm-btn" onclick="this.closest('.bag-row').remove()">✕</button>
+    `;
+    bagContainer.appendChild(row);
+  });
+  const hazardContainer = document.getElementById(`h${n}-hazards`);
+  hazardContainer.innerHTML = '';
+  (hole.hazard_bands || []).forEach(b => {
+    // stored as remaining yards; display as from-tee yards for admin
+    const fromTeeStart = hole.target_distance - b.start;
+    const fromTeeEnd   = hole.target_distance - b.end;
+    const row = document.createElement('div');
+    row.className = 'hazard-row';
+    row.innerHTML = `
+      <input type="number" value="${fromTeeStart}">
+      <input type="number" value="${fromTeeEnd}">
+      <select>
+        <option value="bunker" ${b.type === 'bunker' ? 'selected' : ''}>Bunker</option>
+        <option value="water"  ${b.type === 'water'  ? 'selected' : ''}>Water</option>
+      </select>
+      <button class="rm-btn" onclick="this.closest('.hazard-row').remove()">✕</button>
+    `;
+    hazardContainer.appendChild(row);
+  });
+}
+
+// ── UPCOMING ──────────────────────────────────────────────────────────────────
+async function loadCommunityStats() {
+  try {
+    const today = new Date().toISOString().slice(0,10);
+    const d = await api('GET', `/api/statgolf/community?date=${today}`, null);
+    document.getElementById('cs-finished').textContent = (d.completed_count||0).toLocaleString();
+    document.getElementById('cs-avg').textContent =
+      (d.avg_diff===null||d.avg_diff===undefined) ? '—' : (d.avg_diff>0?'+':'')+d.avg_diff;
+  } catch(e) {}
+}
+async function loadUpcoming() {
+  loadCommunityStats();
+  const data = await api('GET', '/api/admin/upcoming', null);
+  const el = document.getElementById('upcoming-list');
+  if (!data.puzzles || !data.puzzles.length) {
+    el.innerHTML = '<p style="color:var(--gray);font-size:0.85rem">No upcoming puzzles.</p>';
+    return;
+  }
+  // Group by date
+  const byDate = {};
+  data.puzzles.forEach(p => {
+    if (!byDate[p.puzzle_date]) byDate[p.puzzle_date] = [];
+    byDate[p.puzzle_date].push(p);
+  });
+  el.innerHTML = `<table class="upcoming-table">
+    <thead><tr><th>Date</th><th>Holes</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    ${Object.entries(byDate).map(([date, holes]) => {
+      const published = holes.every(h => h.published);
+      const complete  = holes.length === 3;
+      return `<tr>
+        <td>${date}</td>
+        <td>${holes.length}/3</td>
+        <td>
+          <span class="badge ${published ? 'badge-green' : 'badge-gray'}">
+            ${published ? 'Published' : 'Draft'}
+          </span>
+          ${!complete ? '<span class="badge badge-gray" style="margin-left:4px">Incomplete</span>' : ''}
+        </td>
+        <td>
+          <button class="btn btn-secondary btn-sm"
+                  onclick="document.getElementById('puzzle-date').value='${date}';showTab('tab-create');loadExistingPuzzle()">
+            Edit
+          </button>
+          ${!published && complete ? `<button class="btn btn-success btn-sm" style="margin-left:4px"
+                  onclick="publishDate('${date}')">Publish</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function publishDate(d) {
+  const data = await api('POST', '/api/admin/publish', { date: d });
+  if (data.ok) { toast(`Published ${d}`); loadUpcoming(); }
+  else toast(data.error || 'Publish failed');
+}
+
+// ── PLAYTEST ──────────────────────────────────────────────────────────────────
+async function startPlaytest() {
+  const date = document.getElementById('pt-date').value;
+  const diff = document.getElementById('pt-diff').value;
+  if (!date) { toast('Enter a date'); return; }
+  const data = await api('POST', '/api/admin/playtest', { date, difficulty: diff });
+  if (data.error) {
+    document.getElementById('pt-result').textContent = data.error;
+    return;
+  }
+  document.getElementById('pt-result').innerHTML =
+    `Round started for ${date} (${diff}). <a href="/">Go to game →</a>`;
+  toast('Playtest started — head to the game page');
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────────────────
+async function generateCandidates() {
+  const d1 = document.getElementById('gen-driver-1').value;
+  const d2 = document.getElementById('gen-driver-2').value;
+  const d3 = document.getElementById('gen-driver-3').value;
+  if (!d1 || !d2 || !d3) { toast('Select a driver category for each hole'); return; }
+  if (d1 === d2 || d1 === d3 || d2 === d3) { toast('Each hole must use a different driver category'); return; }
+
+  const status  = document.getElementById('gen-status');
+  const results = document.getElementById('gen-results');
+  status.textContent = 'Generating… this may take a few seconds.';
+  results.innerHTML  = '';
+
+  const genDate = document.getElementById('gen-date').value;
+  const data = await api('POST', '/api/admin/generate', { drivers: [d1, d2, d3], n: 5 });
+  if (data.error) { status.textContent = data.error; return; }
+  const packages = data.packages || [];
+  status.textContent = `${packages.length} candidate${packages.length !== 1 ? 's' : ''} generated.`;
+  if (!packages.length) {
+    results.innerHTML = '<p style="color:var(--gray);font-size:0.85rem">No valid packages — the selected drivers may not have enough descending categories available. Try different driver categories.</p>';
+    return;
+  }
+
+  results.innerHTML = packages.map((pkg, i) => {
+    const sports = [...new Set(pkg.holes.map(h => h.sport.toUpperCase()))].join(' · ');
+    const holesHtml = pkg.holes.map(h => {
+      const bagLabels = h.club_bag.map(c => `${c.club} → ${c.stat_category.replace(/_/g,' ')}`).join(', ');
+      const hazSummary = (h.hazard_bands || [])
+        .map(b => b.type === 'water' ? '💧 Water' : '⛱ Bunker')
+        .join(' · ');
+      const hazNote = hazSummary
+        ? `<div style="color:#c08a30;font-size:0.75rem;margin-top:3px">${hazSummary}</div>`
+        : '';
+      return `<div style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <strong>H${h.hole_number}</strong> &nbsp;
+        <span style="color:var(--green)">Par ${h.par}</span> &nbsp;
+        <span style="color:var(--gray);font-size:0.82rem">${h.target_distance.toLocaleString()} yds · ${h.sport.toUpperCase()}</span>
+        <div style="font-size:0.78rem;color:var(--gray);margin-top:2px">${bagLabels}</div>
+        ${hazNote}
+      </div>`;
+    }).join('');
+    return `<div class="card">
+      <div class="card-title">Option ${i+1} &nbsp;<span style="color:var(--gray);font-weight:400">${sports}</span>
+        <span style="float:right;color:var(--gray);font-size:0.7rem">Score: ${pkg.score}</span>
+      </div>
+      ${holesHtml}
+      <div style="margin-top:12px">
+        <button class="btn btn-primary btn-sm" onclick='loadCandidateIntoEditor(${JSON.stringify(pkg)}, "${genDate}")'>
+          Load into Editor
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadCandidateIntoEditor(pkg, genDate) {
+  if (genDate) document.getElementById('puzzle-date').value = genDate;
+  pkg.holes.forEach(hole => {
+    const n = hole.hole_number;
+    document.getElementById(`h${n}-target`).value = hole.target_distance;
+    document.getElementById(`h${n}-par`).value = hole.par;
+
+    const bagContainer = document.getElementById(`h${n}-bag`);
+    bagContainer.innerHTML = '';
+    hole.club_bag.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'bag-row';
+      row.innerHTML = `
+        <select class="club-name-sel">
+          ${CLUB_NAMES.map(cl => `<option value="${cl}" ${cl===c.club?'selected':''}>${cl}</option>`).join('')}
+        </select>
+        <select class="club-cat-sel">
+          <option value="">— Select stat —</option>
+          ${Object.entries(availableCategories).map(([k,v]) =>
+            `<option value="${k}" ${k===c.stat_category?'selected':''}>${v.label}</option>`
+          ).join('')}
+        </select>
+        <span class="club-range-hint"></span>
+        <button class="rm-btn" onclick="this.closest('.bag-row').remove()">✕</button>
+      `;
+      bagContainer.appendChild(row);
+    });
+
+    const hazContainer = document.getElementById(`h${n}-hazards`);
+    hazContainer.innerHTML = '';
+    (hole.hazard_bands || []).forEach(b => {
+      const fromTeeStart = hole.target_distance - b.start;
+      const fromTeeEnd   = hole.target_distance - b.end;
+      const row = document.createElement('div');
+      row.className = 'hazard-row';
+      row.innerHTML = `
+        <input type="number" value="${Math.max(0,fromTeeStart)}">
+        <input type="number" value="${Math.max(0,fromTeeEnd)}">
+        <select>
+          <option value="bunker" ${b.type==='bunker'?'selected':''}>Bunker</option>
+          <option value="water"  ${b.type==='water'?'selected':''}>Water</option>
+        </select>
+        <button class="rm-btn" onclick="this.closest('.hazard-row').remove()">✕</button>
+      `;
+      hazContainer.appendChild(row);
+    });
+  });
+  // Switch to Create tab without relying on event.target
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-create').classList.add('active');
+  document.querySelectorAll('.tab-btn')[0].classList.add('active');
+  toast('Candidate loaded into editor — review and publish');
+}
+
+// ── LANDMARKS ─────────────────────────────────────────────────────────────────
+async function detectLandmarks() {
+  document.getElementById('lm-status').textContent = 'Detecting…';
+  const data = await api('POST', '/api/admin/landmarks/detect', {});
+  document.getElementById('lm-status').textContent =
+    data.ok ? `Done — ${data.inserted} candidate(s) found.` : (data.error || 'Error');
+  await loadLandmarks();
+}
+
+async function loadLandmarks() {
+  const data = await api('GET', '/api/admin/landmarks', null);
+  const all = data.landmarks || [];
+  const active     = all.filter(l => l.is_active === 1);
+  const candidates = all.filter(l => l.is_active === 0);
+
+  const activeSection = document.getElementById('lm-active-section');
+  const candSection   = document.getElementById('lm-candidate-section');
+
+  if (active.length) {
+    activeSection.style.display = '';
+    document.getElementById('lm-active-list').innerHTML = active.map(l =>
+      renderLandmarkRow(l, true)
+    ).join('');
+  } else {
+    activeSection.style.display = 'none';
+  }
+
+  if (candidates.length) {
+    candSection.style.display = '';
+    document.getElementById('lm-candidate-list').innerHTML = candidates.map(l =>
+      renderLandmarkRow(l, false)
+    ).join('');
+  } else {
+    candSection.style.display = candidates.length || active.length ? '' : 'none';
+  }
+
+  if (!all.length) {
+    document.getElementById('lm-status').textContent =
+      'No landmarks yet — click Auto-Detect to find candidates.';
+  }
+}
+
+function renderLandmarkRow(l, isActive) {
+  const catLabel = l.stat_category.replace(/_/g,' ');
+  return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid var(--border)">
+    <div>
+      <strong>${l.player_name}</strong>
+      <span style="font-size:0.75rem;color:var(--gray);margin-left:6px">${l.season_year === 9999 ? 'Career' : l.season_year}</span><br>
+      <span style="font-size:0.78rem;color:var(--gray)">${catLabel} — ${Math.round(l.value).toLocaleString()} yds</span><br>
+      <input type="text" value="${l.description || ''}" placeholder="Description (optional)"
+             style="width:100%;max-width:340px;margin-top:4px;font-size:0.78rem;padding:4px 8px"
+             onchange="saveLmDesc(${l.id}, this.value)">
+    </div>
+    <span class="badge ${isActive ? 'badge-green' : 'badge-gray'}">${isActive ? 'Active' : 'Candidate'}</span>
+    <button class="btn btn-sm ${isActive ? 'btn-secondary' : 'btn-success'}"
+            onclick="toggleLandmark(${l.id}, ${isActive ? 0 : 1})">
+      ${isActive ? 'Deactivate' : 'Activate'}
+    </button>
+  </div>`;
+}
+
+async function toggleLandmark(id, isActive) {
+  await api('POST', '/api/admin/landmarks/toggle', { id, is_active: !!isActive });
+  await loadLandmarks();
+}
+
+async function saveLmDesc(id, desc) {
+  await api('POST', '/api/admin/landmarks/toggle', { id, is_active: null, description: desc });
+}
+
+// ── AUTO-LOGIN from main game session ─────────────────────────────────────────
+(async () => {
+  try {
+    const t = localStorage.getItem('statgolf_token');
+    if (!t) return;
+    const resp = await fetch('/api/me', { headers: { 'Authorization': `Bearer ${t}` } });
+    const data = await resp.json();
+    if (data.user && data.user.is_admin) {
+      admToken = t;
+      document.getElementById('adm-user-label').textContent = data.user.username.toUpperCase();
+      document.getElementById('login-overlay').style.display = 'none';
+      await loadMeta();
+      initForms();
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

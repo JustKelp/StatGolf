@@ -1,0 +1,2792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>StatGolf — Daily Sports Golf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --green-primary:  #1B8A50;
+  --green-fairway:  #2AAD64;
+  --green-bright:   #4DCB84;
+  --green-rough:    #104530;
+  --green-deep:     #0E3D26;
+
+  --gold:           #C9A84C;
+  --gold-light:     #E0C06A;
+  --gold-dim:       rgba(201,168,76,0.4);
+  --sand:           #D9B86A;
+  --water:          #3E9EEF;
+  --flag-red:       #E8253A;
+
+  --bg-body:        #1C4D30;
+  --bg-dark:        #163D25;
+  --bg-mid:         #204530;
+  --bg-card:        #255438;
+  --bg-elevated:    #2C6443;
+  --bg-input:       rgba(0,0,0,0.28);
+
+  /* Text — everything readable, nothing invisible */
+  --text-primary:   #EEF8EE;
+  --text-secondary: #C0DCC8;
+  --text-muted:     #96C0A4;
+  --text-dim:       #78A888;
+
+  --border:         rgba(255,255,255,0.09);
+  --border-strong:  rgba(255,255,255,0.18);
+  --border-gold:    rgba(201,168,76,0.45);
+  --border-gold-b:  #C9A84C;
+
+  --bunker-bg:      #3A2508;
+  --bunker-border:  #A07030;
+  --bunker-text:    #E8CC7A;
+  --water-bg:       #081928;
+  --water-border:   #2878C0;
+  --water-text:     #6ABCEE;
+
+  --clip:    8px;
+  --clip-sm: 5px;
+  --shadow:  0 2px 0 rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.3);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 17px;
+  background: var(--bg-body);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.screen { display: none; }
+.screen.active { display: flex; flex-direction: column; min-height: 100vh; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.screen.active > * { animation: fadeUp 0.22s ease both; }
+.screen.active > *:nth-child(2) { animation-delay: 0.05s; }
+.screen.active > *:nth-child(3) { animation-delay: 0.10s; }
+
+/* ── HEADER ───────────────────────────────────────────── */
+header {
+  position: sticky; top: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px; padding: 0 22px;
+  background: var(--bg-dark);
+  border-bottom: 1px solid var(--border-gold);
+  flex-shrink: 0;
+}
+header::after {
+  content: '';
+  position: absolute; bottom: -1px; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--green-primary) 30%, var(--gold) 70%);
+  pointer-events: none;
+}
+.header-left  { display: flex; align-items: center; gap: 14px; }
+.header-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+.logo {
+  font-family: 'Oswald', sans-serif;
+  font-size: 2rem; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  line-height: 1; color: var(--text-primary);
+  cursor: default; user-select: none;
+}
+.logo span { color: var(--gold); }
+.logo-powered {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.55rem; letter-spacing: 0.22em;
+  color: var(--text-muted);
+  text-transform: uppercase; margin-top: 3px; line-height: 1;
+}
+.header-user {
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.9rem; color: var(--gold-light);
+  letter-spacing: 0.1em; font-weight: 600;
+}
+
+/* ── BUTTONS ──────────────────────────────────────────── */
+.btn {
+  display: inline-block; padding: 12px 30px;
+  border: none; cursor: pointer;
+  font-family: 'Oswald', sans-serif;
+  font-size: 0.95rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  transition: all 0.12s ease;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-primary {
+  background: var(--gold); color: #0F1E14; position: relative;
+}
+.btn-primary::after { content: none; }
+.btn-primary:hover:not(:disabled) { background: var(--gold-light); transform: translate(-1px,-1px); box-shadow: 2px 2px 0 rgba(0,0,0,0.25); }
+.btn-secondary {
+  background: transparent; color: var(--gold);
+  border: 1px solid var(--border-gold);
+}
+.btn-secondary:hover:not(:disabled) { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+.btn-danger {
+  background: transparent; color: #F07070;
+  border: 1px solid rgba(231,76,60,0.4);
+}
+.btn-danger:hover:not(:disabled) { background: rgba(231,76,60,0.12); border-color: #EF4444; }
+.btn-ghost {
+  background: transparent; color: var(--text-secondary);
+  border: 1px solid var(--border-strong);
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+/* Borderless text button (no box) */
+.link-btn {
+  background: none; border: none; cursor: pointer;
+  font-family: 'Oswald', sans-serif; font-size: 0.85rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted); padding: 8px 10px; transition: color 0.15s;
+}
+.link-btn:hover { color: var(--gold); }
+.btn-full { width: 100%; text-align: center; }
+.btn-sm {
+  padding: 7px 16px; background: transparent;
+  border: 1px solid var(--border-strong); color: var(--text-secondary);
+  cursor: pointer; font-family: 'Oswald', sans-serif;
+  font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border-radius: 999px;
+  transition: all 0.15s;
+}
+.btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+.btn-signin {
+  padding: 8px 22px; background: var(--gold); color: #0F1E14;
+  border: none; cursor: pointer; font-family: 'Oswald', sans-serif;
+  font-size: 0.82rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+.btn-signin:hover { background: var(--gold-light); }
+
+/* ── INPUTS ───────────────────────────────────────────── */
+input[type="text"], input[type="password"] {
+  width: 100%; padding: 11px 14px;
+  background: var(--bg-input);
+  border: none; border-left: 3px solid var(--border-strong);
+  color: var(--text-primary);
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 1rem; outline: none; border-radius: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+input:focus { border-left-color: var(--gold); background: rgba(0,0,0,0.38); }
+input::placeholder { color: var(--text-dim); }
+
+/* ── CARDS ────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-gold);
+  border-top: 3px solid var(--gold);
+  padding: 20px 22px; margin-bottom: 14px;
+  position: relative; box-shadow: var(--shadow);
+}
+.card::before,.card::after {
+  content:''; position:absolute; top:-3px;
+  width:13px; height:13px;
+  border:3px solid var(--gold); pointer-events:none;
+}
+.card::before { left:-1px; border-right:none; border-bottom:none; }
+.card::after  { right:-1px; border-left:none;  border-bottom:none; }
+.bag-card { border-radius:18px; }
+.bag-card::before, .bag-card::after { content:none; }
+.card-title {
+  font-family: 'Source Sans 3', sans-serif;
+  font-size: 0.66rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.24em;
+  color: var(--gold); margin-bottom: 16px;
+}
+
+.main { flex: 1; padding: 22px 20px; max-width: 1100px; width: 100%; margin: 0 auto; }
+
+/* ── AUTH MODAL ───────────────────────────────────────── */
+#auth-modal {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72); z-index: 600;
+  align-items: center; justify-content: center; padding: 20px;
+  backdrop-filter: blur(6px);
+}
+#auth-modal.active { display: flex; }
+.auth-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-gold-b); border-top: 3px solid var(--gold);
+  padding: 32px 28px; max-width: 400px; width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7); position: relative;
+  clip-path: polygon(var(--clip) 0,100% 0,100% calc(100% - var(--clip)),calc(100% - var(--clip)) 100%,0 100%,0 var(--clip));
+  animation: fadeUp 0.2s ease both;
+}
+.auth-card::before,.auth-card::after {
+  content:''; position:absolute; top:-3px;
+  width:13px; height:13px; border:3px solid var(--gold); pointer-events:none;
+}
+.auth-card::before { left:-1px; border-right:none; border-bottom:none; }
+.auth-card::after  { right:-1px; border-left:none;  border-bottom:none; }
+.auth-logo {
+  font-family:'Oswald',sans-serif; font-size:2rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase; text-align:center; margin-bottom:3px;
+}
+.auth-logo span { color:var(--gold); }
+.auth-subtitle {
+  font-family:'Source Sans 3',sans-serif; text-align:center;
+  color: var(--text-muted);
+  font-size:0.6rem; letter-spacing:0.24em; text-transform:uppercase; margin-bottom:22px;
+}
+.auth-tabs { display:flex; margin-bottom:20px; border-bottom:1px solid var(--border); }
+.auth-tab {
+  flex:1; padding:9px 12px; background:none; border:none;
+  border-bottom:2px solid transparent; color: var(--text-secondary);
+  cursor:pointer; font-family:'Oswald',sans-serif; font-weight:600; font-size:0.9rem;
+  letter-spacing:0.12em; text-transform:uppercase;
+  transition:color 0.15s,border-color 0.15s; margin-bottom:-1px;
+}
+.auth-tab.active { color:var(--gold); border-bottom-color:var(--gold); }
+.auth-close {
+  position:absolute; top:12px; right:14px;
+  background:none; border:none; color: var(--text-muted);
+  font-size:1.5rem; cursor:pointer; line-height:1; transition:color 0.15s;
+}
+.auth-close:hover { color:var(--text-primary); }
+.form-group { margin-bottom:13px; }
+.form-group label {
+  display:block; font-family:'Source Sans 3',sans-serif;
+  font-size:0.65rem; font-weight:700; color: var(--text-muted);
+  margin-bottom:5px; letter-spacing:0.14em; text-transform:uppercase;
+}
+.error-msg {
+  color:#F07070; font-family:'Source Sans 3',sans-serif;
+  font-size:0.74rem; margin-top:9px; min-height:1em; display:none;
+}
+.error-msg.show { display:block; }
+
+/* ══════════════════════════════════════════════════
+   LOBBY
+══════════════════════════════════════════════════ */
+.lobby-hero { text-align:center; padding:30px 0 22px; }
+.lobby-eyebrow {
+  font-family:'Source Sans 3',sans-serif; font-size:0.82rem; font-weight:600;
+  letter-spacing:0.12em; color: var(--text-muted);
+  text-transform:uppercase; margin-bottom:8px;
+}
+.lobby-headline {
+  font-family:'Oswald',sans-serif; font-size:2.6rem; font-weight:700;
+  letter-spacing:0.06em; text-transform:uppercase;
+  color:var(--text-primary); line-height:1.05; margin-bottom:6px;
+}
+.lobby-headline span { color:var(--gold); }
+.lobby-tagline { font-size:1rem; color: var(--text-secondary); }
+
+.guest-cta {
+  background: rgba(201,168,76,0.08);
+  border:1px solid var(--border-gold); border-left:4px solid var(--gold);
+  padding:14px 18px; margin-bottom:14px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.guest-cta-text { font-size:0.95rem; color:var(--text-secondary); }
+.guest-cta-text strong { color:var(--gold-light); font-weight:600; }
+
+.difficulty-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+.diff-card {
+  border:1px solid var(--border); padding:16px 14px; cursor:pointer; text-align:center;
+  background:var(--bg-mid);
+  transition:border-color 0.15s,background 0.15s,transform 0.1s;
+  clip-path:polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+  position:relative; overflow:hidden;
+}
+.diff-card::before {
+  content:''; position:absolute; top:0; left:0;
+  width:0; height:3px; background:var(--gold); transition:width 0.2s;
+}
+.diff-card:hover { border-color:var(--border-gold); background:var(--bg-elevated); transform:translateY(-1px); }
+.diff-card.selected { border-color:var(--gold); background:var(--bg-elevated); }
+.diff-card:hover::before,.diff-card.selected::before { width:100%; }
+.diff-card .diff-name {
+  font-family:'Oswald',sans-serif; font-weight:700; font-size:1.1rem;
+  letter-spacing:0.1em; text-transform:uppercase; color:var(--gold);
+}
+.diff-card .diff-desc { font-size:0.82rem; color:var(--text-secondary); margin-top:4px; }
+.diff-card .diff-rule { font-size:0.72rem; color:var(--text-muted); margin-top:3px; font-style:italic; }
+
+.course-section { margin-bottom:14px; }
+.course-section .card-title {
+  font-family:'Source Sans 3',sans-serif; font-size:0.82rem; font-weight:600; letter-spacing:0.1em;
+}
+.puzzle-preview { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+/* Boxless: holes sit in open space, no border/background around each */
+.hole-preview { padding:12px 10px; text-align:center; }
+.hole-preview .hp-num {
+  font-family:'Source Sans 3',sans-serif; font-size:0.82rem;
+  color: var(--text-muted); font-weight:600; letter-spacing:0.08em;
+  text-transform:uppercase; margin-bottom:6px;
+}
+.hole-preview .hp-target {
+  font-family:'Oswald',sans-serif; font-size:1.65rem; font-weight:700; color:var(--gold); line-height:1.1;
+}
+.hole-preview .hp-par {
+  font-family:'Source Sans 3',sans-serif; font-size:0.85rem; font-weight:500;
+  color:var(--text-secondary); margin-top:5px;
+}
+
+/* ── Profile (top-left clickable name + streak, dropdown menu) ── */
+.profile-wrap { position:relative; }
+.profile-btn {
+  display:flex; align-items:center; gap:7px; cursor:pointer;
+  background:transparent; border:1px solid var(--border-gold); color:var(--gold-light);
+  font-family:'Oswald',sans-serif; font-size:0.85rem; font-weight:600; letter-spacing:0.08em;
+  padding:6px 15px;
+  border-radius:999px;
+  transition:background 0.15s;
+}
+.profile-btn:hover { background:rgba(201,168,76,0.1); }
+.profile-streak { color:var(--gold); font-weight:700; }
+.profile-caret { font-size:0.6rem; color:var(--text-muted); }
+.profile-menu {
+  display:none; position:absolute; top:calc(100% + 8px); right:0; z-index:300;
+  min-width:264px; background:var(--bg-card);
+  border:1px solid var(--border-gold); border-top:3px solid var(--gold);
+  box-shadow:var(--shadow); padding:14px;
+}
+.profile-menu.open { display:block; }
+.pm-title {
+  font-family:'Source Sans 3',sans-serif; font-size:0.62rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.22em; color:var(--gold); margin-bottom:10px;
+}
+.pm-history { max-height:300px; overflow-y:auto; margin-bottom:12px; }
+.pm-empty { font-size:0.8rem; color:var(--text-muted); padding:8px 4px; }
+.pm-logout {
+  width:100%; background:transparent; border:1px solid var(--border-gold);
+  color:var(--text-secondary); font-family:'Oswald',sans-serif; font-size:0.8rem;
+  letter-spacing:0.1em; text-transform:uppercase; padding:9px; cursor:pointer; transition:all 0.15s;
+}
+.pm-logout:hover { border-color:var(--gold); color:var(--gold); }
+
+/* ══════════════════════════════════════════════════
+   HOLE SCREEN
+══════════════════════════════════════════════════ */
+#screen-hole .main { display:flex; flex-direction:column; }
+
+/* Compact info strip */
+.hole-strip {
+  display:flex; align-items:center; justify-content:space-around;
+  padding:12px 22px; margin-bottom:16px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border); border-radius:14px;
+}
+.hs-stat { text-align:center; }
+.hs-label {
+  font-family:'Source Sans 3',sans-serif; font-size:0.6rem;
+  letter-spacing:0.18em; text-transform:uppercase;
+  color: var(--text-muted);
+  margin-bottom:3px;
+}
+.hs-value {
+  font-family:'Oswald',sans-serif; font-size:1.45rem; font-weight:700;
+  color:var(--text-primary); line-height:1;
+}
+.hs-value.accent { color:var(--gold); }
+.hs-divider {
+  width:1px; height:36px; background:var(--border-strong); flex-shrink:0;
+}
+
+/* Two columns */
+.hole-columns {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 16px;
+  align-items: start;
+}
+.hole-left  { display:flex; flex-direction:column; gap:14px; }
+.hole-right { display:flex; flex-direction:column; gap:0; }
+/* Shot input — de-boxed: a clean area, not a card box */
+.shot-input { padding:4px 2px 0; }
+.shot-input .card-title { margin-bottom:12px; }
+
+/* ── VERTICAL FAIRWAY (boxless arena) ─────────────────── */
+.fairway-arena { display:flex; flex-direction:column; gap:10px; }
+
+/* Top-down hole SVG */
+.hole-svg-wrap { width: 100%; }
+#hole-svg { display: block; width: 100%; max-height: 440px; }
+@keyframes sgBallPop {
+  0%,100% { transform: scale(1); }
+  35%     { transform: scale(1.6); }
+  65%     { transform: scale(0.8); }
+}
+.sg-ball-pop { animation: sgBallPop 0.44s ease both; }
+
+/* Remaining yards hero — sits on top of the hole graphic, seen first */
+.remaining-hero {
+  text-align:center; padding: 4px 0 6px;
+}
+.rem-big {
+  font-family:'Oswald',sans-serif; font-size:4rem; font-weight:700;
+  color:var(--gold); line-height:1; letter-spacing:0.02em;
+}
+@keyframes remPulse {
+  0%,100% { color:var(--gold); }
+  40%      { color:var(--gold-light); }
+}
+.rem-big.pulse { animation:remPulse 0.5s ease; }
+.rem-unit {
+  font-family:'Fredoka',sans-serif; font-size:0.82rem; font-weight:500;
+  color: var(--text-muted);
+  letter-spacing:0.01em; margin-top:3px;
+}
+.overshoot-badge {
+  display:inline-block;
+  background:rgba(231,76,60,0.15); border:1px solid rgba(231,76,60,0.4);
+  padding:2px 9px;
+  font-family:'Oswald',sans-serif; font-size:0.7rem; font-weight:700;
+  letter-spacing:0.1em; color:#F07070; margin-left:8px;
+}
+
+/* Hazard pills */
+.hazard-pills {
+  display:flex; flex-wrap:wrap; gap:6px; padding: 4px 0 0;
+}
+.hazard-pills:empty { display:none; }
+.hz-pill {
+  font-family:'Source Sans 3',sans-serif; font-size:0.74rem; font-weight:600;
+  letter-spacing:0; padding:5px 13px; border-radius:999px;
+}
+
+/* ── CLUB BAG ──────────────────────────────────────────── */
+.club-bag { display:flex; flex-direction:column; gap:7px; }
+.club-btn {
+  width:100%; padding:11px 14px;
+  border:1px solid var(--border-strong);
+  background:var(--bg-mid); cursor:pointer; text-align:left;
+  transition:border-color 0.15s,background 0.15s,transform 0.1s;
+  position:relative;
+  border-radius:12px;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+.club-btn:hover:not(:disabled) { border-color:var(--border-gold); background:var(--bg-elevated); transform:translateX(2px); }
+.club-btn.selected { border-color:var(--gold); background:rgba(201,168,76,0.1); }
+.club-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.club-btn.bunker-next { border-color:var(--bunker-border); background:var(--bunker-bg); }
+.club-info { flex:1; min-width:0; }
+.club-name {
+  font-family:'Oswald',sans-serif; font-weight:700; font-size:0.92rem;
+  letter-spacing:0.06em; text-transform:uppercase; color:var(--text-primary);
+}
+.club-stat {
+  font-size:0.72rem; color: var(--text-secondary);
+  margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.club-badge {
+  font-family:'Source Sans 3',sans-serif; font-size:0.55rem;
+  color:var(--gold); font-weight:700; letter-spacing:0.08em; flex-shrink:0;
+}
+.club-used-mark { color:var(--green-bright); font-size:0.8rem; flex-shrink:0; }
+.club-hint {
+  font-family:'Fredoka',sans-serif; font-size:0.74rem; font-weight:500;
+  color:var(--text-dim); margin-top:2px; letter-spacing:0.01em;
+}
+
+/* ── SHOT INPUT ────────────────────────────────────────── */
+.autocomplete-wrap { position:relative; }
+.autocomplete-input {
+  width:100%; padding:11px 14px;
+  background:var(--bg-input);
+  border:none; border-left:3px solid var(--border-strong);
+  color:var(--text-primary);
+  font-family:'Source Sans 3',sans-serif; font-size:1rem; outline:none; border-radius:0;
+  transition:border-color 0.15s,background 0.15s;
+}
+.autocomplete-input:focus { border-left-color:var(--gold); background:rgba(0,0,0,0.38); }
+.autocomplete-input::placeholder { color: var(--text-muted); }
+
+.autocomplete-dropdown {
+  position:absolute; top:100%; left:0; right:0; z-index:100;
+  background:var(--bg-elevated);
+  border:1px solid var(--border-strong); border-left:3px solid var(--gold);
+  max-height:210px; overflow-y:auto; display:none;
+}
+.autocomplete-dropdown.open { display:block; }
+.ac-item {
+  padding:10px 15px; cursor:pointer; font-size:0.95rem;
+  border-bottom:1px solid var(--border);
+  color:var(--text-primary); font-family:'Source Sans 3',sans-serif;
+  transition:background 0.1s;
+}
+.ac-item:hover,.ac-item.focused { background:var(--bg-mid); color:var(--gold); }
+.ac-item:last-child { border-bottom:none; }
+.ac-sport {
+  font-family:'Source Sans 3',sans-serif; font-size:0.6rem;
+  color: var(--text-muted); margin-left:8px; letter-spacing:0.08em; text-transform:uppercase;
+}
+
+.season-select {
+  width:100%; padding:10px 14px;
+  background:var(--bg-input);
+  border:none; border-left:3px solid var(--border-strong);
+  color:var(--text-primary); font-family:'Source Sans 3',sans-serif;
+  font-size:0.95rem; outline:none; border-radius:0;
+  appearance:none; -webkit-appearance:none;
+  margin-top:9px; display:none; transition:border-color 0.15s;
+}
+.season-select.show { display:block; }
+.season-select:focus { border-left-color:var(--gold); }
+.season-select option { background:var(--bg-elevated); color:var(--text-primary); }
+
+.shot-confirm-row {
+  display:none; align-items:center; gap:12px;
+  margin-top:10px; padding:11px 14px;
+  background:var(--bg-mid); border:1px solid var(--border);
+  border-left:3px solid var(--green-fairway);
+}
+.shot-confirm-row.show { display:flex; }
+.sc-mystery {
+  font-family:'Oswald',sans-serif; font-size:1.8rem; font-weight:700;
+  color:var(--gold); letter-spacing:0.1em;
+}
+.sc-player { font-weight:700; font-size:0.92rem; color:var(--text-primary); }
+.sc-season  { font-size:0.75rem; color: var(--text-secondary); }
+
+/* ── SHOT HISTORY (collapsed) ──────────────────────────── */
+.history-toggle {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:9px 14px; cursor:pointer;
+  background:var(--bg-mid); border:1px solid var(--border);
+  border-left:3px solid var(--text-dim);
+  font-family:'Source Sans 3',sans-serif;
+  font-size:0.64rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase;
+  color: var(--text-secondary);
+  transition:border-color 0.15s,color 0.15s;
+}
+.history-toggle:hover { border-left-color:var(--gold); color:var(--gold); }
+.ht-arrow { transition:transform 0.2s; }
+.history-toggle.open .ht-arrow { transform:rotate(180deg); }
+.history-body { display:none; }
+.history-body.open { display:block; }
+
+.shot-list { list-style:none; }
+.shot-list li {
+  display:flex; align-items:center; gap:8px;
+  padding:8px 0; border-bottom:1px solid var(--border); font-size:0.86rem;
+}
+.shot-list li:last-child { border-bottom:none; }
+.sl-num {
+  font-family:'Source Sans 3',sans-serif; font-size:0.62rem;
+  color: var(--text-muted); min-width:18px; text-align:center;
+}
+.sl-club {
+  font-family:'Oswald',sans-serif; font-weight:700; font-size:0.84rem;
+  text-transform:uppercase; letter-spacing:0.04em; color:var(--text-secondary); min-width:85px;
+}
+.sl-player { color: var(--text-secondary); flex:1; font-size:0.82rem; }
+.sl-dist {
+  font-family:'Oswald',sans-serif; font-weight:700; font-size:0.92rem; color:var(--gold);
+}
+.sl-fx {
+  font-family:'Source Sans 3',sans-serif; font-size:0.56rem; padding:2px 6px; font-weight:700;
+  letter-spacing:0.04em;
+  clip-path:polygon(2px 0,100% 0,100% calc(100% - 2px),calc(100% - 2px) 100%,0 100%,0 2px);
+}
+.sl-fx.bunker { background:var(--bunker-bg); color:var(--bunker-text); border:1px solid var(--bunker-border); }
+.sl-fx.water  { background:var(--water-bg);  color:var(--water-text);  border:1px solid var(--water-border); }
+
+.bunker-warning {
+  background:var(--bunker-bg); border:1px solid var(--bunker-border);
+  border-left:3px solid var(--sand);
+  padding:10px 14px; font-size:0.88rem; font-weight:600;
+  color:var(--bunker-text); display:none; margin-bottom:10px;
+}
+.bunker-warning.show { display:block; }
+
+/* ── GAME MODALS ──────────────────────────────────────── */
+.modal-overlay {
+  display:none; position:fixed; inset:0;
+  background:rgba(0,0,0,0.75); z-index:500;
+  align-items:center; justify-content:center; padding:20px;
+  backdrop-filter:blur(5px);
+}
+.modal-overlay.active { display:flex; }
+.modal-box {
+  background:var(--bg-elevated);
+  border:1px solid var(--border-gold-b); border-top:3px solid var(--gold);
+  padding:28px; max-width:430px; width:90%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.7); text-align:center;
+  clip-path:polygon(var(--clip) 0,100% 0,100% calc(100% - var(--clip)),calc(100% - var(--clip)) 100%,0 100%,0 var(--clip));
+  animation:fadeUp 0.2s ease both;
+}
+.modal-box h2 {
+  font-family:'Oswald',sans-serif; font-size:1.45rem; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase; color:var(--gold); margin-bottom:9px;
+}
+.modal-box p { color:var(--text-secondary); font-size:0.92rem; margin-bottom:18px; line-height:1.55; }
+.modal-actions { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:8px; }
+.modal-score {
+  font-family:'Oswald',sans-serif; font-size:3.2rem; font-weight:700;
+  letter-spacing:0.06em; margin:10px 0;
+}
+.modal-score.under { color:var(--green-bright); }
+.modal-score.even  { color:var(--text-primary); }
+.modal-score.over  { color:#F07070; }
+.hole-recap { text-align:left; }
+.recap-shot {
+  display:flex; justify-content:space-between;
+  padding:7px 0; border-bottom:1px solid var(--border);
+  font-size:0.86rem; color:var(--text-secondary);
+}
+.recap-shot:last-child { border-bottom:none; }
+
+/* ── RESULT ───────────────────────────────────────────── */
+.share-box {
+  background:var(--bg-mid); border:1px solid var(--border);
+  border-left:3px solid var(--green-fairway);
+  padding:14px; font-family:'Source Sans 3',sans-serif;
+  font-size:0.82rem; white-space:pre; text-align:left;
+  margin:12px 0; color:var(--text-secondary); line-height:1.65;
+}
+.share-card-wrap { margin:6px 0 14px; display:flex; justify-content:center; }
+.share-card-canvas {
+  width:100%; max-width:340px; height:auto; border-radius:10px;
+  box-shadow:0 6px 22px rgba(0,0,0,0.35); border:1px solid var(--gold-dim);
+}
+.share-actions { display:flex; flex-direction:column; gap:10px; }
+.scorecard { width:100%; border-collapse:collapse; margin:12px 0; }
+.scorecard th,.scorecard td {
+  padding:9px 12px; text-align:center;
+  border-bottom:1px solid var(--border); font-size:0.92rem;
+}
+.scorecard th {
+  font-family:'Source Sans 3',sans-serif; font-size:0.6rem;
+  color: var(--text-muted); font-weight:700; text-transform:uppercase; letter-spacing:0.16em;
+}
+.scorecard td:first-child { text-align:left; font-weight:600; color:var(--text-secondary); }
+.score-under { color:var(--green-bright); font-weight:700; }
+.score-over  { color:#F07070; font-weight:700; }
+.score-even  { color:var(--text-primary); }
+.scorecard tfoot td {
+  font-family:'Oswald',sans-serif; font-weight:700;
+  border-top:2px solid var(--border-gold); color:var(--text-primary);
+}
+/* Clickable hole rows → reveal players used on that hole */
+.scorecard .sc-row { cursor:pointer; transition:background 0.12s; }
+.scorecard .sc-row:hover { background:rgba(255,255,255,0.04); }
+.sc-caret { display:inline-block; font-size:0.62rem; color:var(--text-muted); transition:transform 0.15s; margin-left:4px; }
+.scorecard .sc-detail td { text-align:left; background:rgba(0,0,0,0.18); padding:6px 12px 10px; }
+.hole-shot {
+  display:flex; justify-content:space-between; align-items:center; gap:12px;
+  padding:6px 4px; font-size:0.82rem; color:var(--text-secondary);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.hole-shot:last-child { border-bottom:none; }
+.hole-shot .hs-yr { color:var(--text-muted); font-family:'Source Sans 3',sans-serif; font-size:0.72rem; }
+.hole-shot .hs-dist { color:var(--gold); font-family:'Oswald',sans-serif; font-weight:700; white-space:nowrap; }
+
+/* ── TOAST ────────────────────────────────────────────── */
+.toast {
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%);
+  background:var(--bg-elevated); border:1px solid var(--border-gold-b);
+  color:var(--text-primary); padding:11px 26px;
+  font-family:'Oswald',sans-serif; font-size:0.9rem; font-weight:500;
+  letter-spacing:0.08em; text-transform:uppercase;
+  z-index:1000; opacity:0; transition:opacity 0.2s;
+  pointer-events:none; max-width:90vw; text-align:center;
+  clip-path:polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+  box-shadow:0 8px 28px rgba(0,0,0,0.45);
+}
+.toast.show { opacity:1; }
+
+/* ── RESPONSIVE ───────────────────────────────────────── */
+@media (max-width: 660px) {
+  header { height:56px; padding:0 14px; }
+  .logo { font-size:1.65rem; }
+  .main { padding:14px 12px; }
+  .btn { padding:11px 20px; font-size:0.9rem; }
+  .hole-columns { grid-template-columns:1fr; }
+  .hole-right { order:-1; }
+  .fairway-outer { height:300px; }
+  .rem-big { font-size:3rem; }
+  .lobby-headline { font-size:2rem; }
+  .hs-divider { display:none; }
+}
+@media (max-width:400px) {
+  .hole-strip { flex-wrap:wrap; gap:10px; justify-content:center; }
+}
+
+/* ── COMMUNITY PULSE ─────────────────────────────────────────────────── */
+.community-pulse {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 18px; margin-bottom:14px;
+  background:var(--bg-mid); border:1px solid var(--border);
+  border-left:3px solid var(--green-primary);
+  font-family:'Source Sans 3',sans-serif; font-size:0.72rem;
+  color:var(--text-muted); letter-spacing:0.06em;
+}
+.community-pulse .cp-count { color:var(--green-bright); font-weight:700; font-size:0.82rem; }
+.community-pulse .cp-avg   { color:var(--text-secondary); }
+
+/* ── DIFFICULTY MODAL ────────────────────────────────────────────────── */
+.diff-modal-btn {
+  display:block; width:100%; padding:18px 22px; margin-bottom:10px;
+  text-align:left; cursor:pointer; position:relative; overflow:hidden;
+  border:1px solid var(--border-strong); background:var(--bg-mid);
+  transition:border-color 0.15s, background 0.15s;
+  clip-path:polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+}
+.diff-modal-btn:hover { border-color:var(--gold); background:var(--bg-elevated); }
+.diff-modal-btn .dmb-name {
+  font-family:'Oswald',sans-serif; font-size:1.3rem; font-weight:700;
+  color:var(--gold); letter-spacing:0.1em; text-transform:uppercase;
+}
+.diff-modal-btn .dmb-rule {
+  font-family:'Source Sans 3',sans-serif; font-size:0.65rem;
+  color:var(--text-muted); margin-top:4px; letter-spacing:0.1em;
+}
+
+/* ── RESULT EXTRAS ───────────────────────────────────────────────────── */
+.rarity-display {
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  padding:12px 18px; margin:10px 0;
+  background:var(--bg-mid); border:1px solid var(--border);
+}
+.rarity-num {
+  font-family:'Oswald',sans-serif; font-size:2rem; font-weight:700; color:var(--green-bright);
+}
+.rarity-label {
+  font-family:'Source Sans 3',sans-serif; font-size:0.62rem;
+  color:var(--text-muted); letter-spacing:0.14em; text-transform:uppercase; line-height:1.5;
+}
+.hole-callout {
+  background:var(--bg-mid); border:1px solid var(--border);
+  border-left:3px solid var(--gold);
+  padding:10px 16px; margin:8px 0;
+  font-size:0.88rem; color:var(--text-secondary);
+}
+.hole-callout strong { color:var(--gold); }
+.landmark-callout {
+  background:rgba(201,168,76,0.07); border:1px solid var(--border-gold);
+  border-left:3px solid var(--gold);
+  padding:10px 16px; margin:8px 0; font-size:0.88rem;
+}
+.landmark-callout .lc-badge {
+  font-family:'Source Sans 3',sans-serif; font-size:0.6rem; font-weight:700;
+  color:var(--gold); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:4px;
+}
+.milestone-card {
+  text-align:center; padding:28px 22px; margin-bottom:14px;
+  background:rgba(201,168,76,0.1); border:2px solid var(--gold);
+}
+.milestone-number {
+  font-family:'Oswald',sans-serif; font-size:4rem; font-weight:700; color:var(--gold); line-height:1;
+}
+.milestone-label {
+  font-family:'Source Sans 3',sans-serif; font-size:0.68rem;
+  color:var(--text-muted); letter-spacing:0.2em; text-transform:uppercase; margin-top:6px;
+}
+.milestone-msg { color:var(--text-secondary); font-size:0.95rem; margin-top:10px; }
+
+/* ── SHOT REVEAL OVERLAY ──────────────────────────────────────────────── */
+#shot-reveal-overlay {
+  position:fixed; inset:0; z-index:450;
+  background:rgba(11,48,28,0.94);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; text-align:center;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.18s ease;
+  backdrop-filter:blur(6px);
+}
+#shot-reveal-overlay.active { opacity:1; pointer-events:auto; }
+.rev-player-name {
+  font-family:'Oswald',sans-serif; font-size:1.7rem; font-weight:700;
+  color:var(--text-primary); letter-spacing:0.08em; text-transform:uppercase;
+  padding:0 20px;
+}
+.rev-season-cat {
+  font-family:'Source Sans 3',sans-serif; font-size:0.72rem;
+  color:var(--text-muted); letter-spacing:0.16em; text-transform:uppercase;
+  margin-bottom:16px;
+}
+#rev-dist {
+  font-size:5rem; transition:color 0.2s;
+}
+#rev-dist.flash-green { color:var(--green-bright); }
+#rev-dist.flash-amber { color:var(--sand); }
+#rev-dist.flash-red   { color:#F07070; }
+
+/* ── STREAK & RAINCHECK ───────────────────────────────────────────────── */
+.streak-badge {
+  display:flex; align-items:center; gap:12px; justify-content:center;
+  padding:12px 22px; margin-bottom:14px;
+  background:rgba(201,168,76,0.08); border:1px solid var(--border-gold);
+  border-left:4px solid var(--gold);
+}
+.streak-flame { font-size:1.6rem; line-height:1; }
+.streak-count {
+  font-family:'Oswald',sans-serif; font-size:1.25rem; font-weight:700; color:var(--gold);
+}
+.streak-sub {
+  font-family:'Source Sans 3',sans-serif; font-size:0.6rem;
+  color:var(--text-muted); letter-spacing:0.14em; text-transform:uppercase; margin-top:2px;
+}
+.raincheck-banner {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:14px 18px; margin-bottom:14px;
+  background:rgba(245,166,35,0.06);
+  border:1px solid rgba(245,166,35,0.35); border-left:4px solid #F5A623;
+}
+.rc-title {
+  font-family:'Oswald',sans-serif; font-size:0.9rem; font-weight:700;
+  color:#F5A623; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:3px;
+}
+.rc-desc { font-size:0.88rem; color:var(--text-secondary); }
+.btn-raincheck {
+  padding:8px 18px; background:transparent; color:#F5A623;
+  border:1px solid rgba(245,166,35,0.5); cursor:pointer;
+  font-family:'Oswald',sans-serif; font-size:0.82rem; font-weight:700;
+  letter-spacing:0.1em; text-transform:uppercase; flex-shrink:0;
+  clip-path:polygon(var(--clip-sm) 0,100% 0,100% calc(100% - var(--clip-sm)),calc(100% - var(--clip-sm)) 100%,0 100%,0 var(--clip-sm));
+  transition:background 0.15s;
+}
+.btn-raincheck:hover { background:rgba(245,166,35,0.12); }
+
+/* ── TUTORIAL SCREEN ─────────────────────────────────────────────────── */
+.tut-tip {
+  background:rgba(201,168,76,0.07); border:1px solid var(--border-gold);
+  border-left:4px solid var(--gold); padding:14px 18px; margin-bottom:10px;
+}
+.tut-tip-label {
+  font-family:'Source Sans 3',sans-serif; font-size:0.6rem; font-weight:700;
+  color:var(--gold); letter-spacing:0.2em; text-transform:uppercase; margin-bottom:6px;
+}
+.tut-tip-text { color:var(--text-secondary); font-size:0.95rem; line-height:1.6; }
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH MODAL ════════════════════════════════════════════════════════════ -->
+<div id="auth-modal">
+  <div class="auth-card">
+    <button class="auth-close" onclick="closeAuthModal()">&times;</button>
+    <div class="auth-logo">Stat<span>Golf</span></div>
+    <div class="auth-subtitle">3 holes &mdash; 1 chance &mdash; daily</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-signin" onclick="showAuthTab('signin')">Sign In</button>
+      <button class="auth-tab" id="tab-register" onclick="showAuthTab('register')">Create Account</button>
+    </div>
+    <div id="auth-signin-form">
+      <div class="form-group"><label>Username</label>
+        <input id="login-username" type="text" placeholder="Username" autocomplete="username"></div>
+      <div class="form-group"><label>Password</label>
+        <input id="login-password" type="password" placeholder="Password" autocomplete="current-password"></div>
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In</button>
+    </div>
+    <div id="auth-register-form" style="display:none">
+      <div class="form-group"><label>Username</label>
+        <input id="reg-username" type="text" placeholder="2–20 characters, alphanumeric"></div>
+      <div class="form-group"><label>Password</label>
+        <input id="reg-password" type="password" placeholder="At least 8 characters"></div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()">Create Account</button>
+    </div>
+    <div id="auth-error" class="error-msg"></div>
+  </div>
+</div>
+
+<!-- ═══ LOBBY ═════════════════════════════════════════════════════════════════ -->
+<div id="screen-lobby" class="screen active">
+  <header>
+    <div class="header-left">
+      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+      <button class="btn-sm" onclick="document.getElementById('htp-modal').classList.add('active')">How to Play</button>
+    </div>
+    <div class="header-right">
+      <a id="lobby-admin-link" href="/admin" style="display:none;font-family:'Oswald',sans-serif;font-size:0.74rem;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1px solid var(--border-gold);padding:6px 13px;border-radius:999px;transition:background 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'" onmouseout="this.style.background='transparent'">Admin</a>
+      <button id="lobby-signin-btn" class="btn-signin" onclick="openAuthModal()" style="display:none">Sign In</button>
+      <!-- Clickable profile (name + streak) → menu with recent rounds + log out -->
+      <div class="profile-wrap" style="display:none">
+        <button class="profile-btn" onclick="toggleProfileMenu(event)">
+          <span class="profile-name"></span>
+          <span class="profile-streak" style="display:none"></span>
+          <span class="profile-caret">▾</span>
+        </button>
+        <div class="profile-menu">
+          <div class="pm-title">Recent Rounds</div>
+          <div class="pm-history"><div class="pm-empty">No rounds yet — play today!</div></div>
+          <button class="pm-logout" onclick="doLogout()">Log Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="main" style="max-width:700px">
+    <div class="lobby-hero">
+      <div class="lobby-eyebrow" id="lobby-date"></div>
+      <div class="lobby-headline">Today's <span>Round</span></div>
+    </div>
+
+    <!-- Raincheck banner (missed yesterday, account required) -->
+    <div class="raincheck-banner" id="raincheck-banner" style="display:none">
+      <div>
+        <div class="rc-title">Raincheck Available</div>
+        <div class="rc-desc" id="raincheck-desc">You missed yesterday. Play it now to save your streak.</div>
+      </div>
+      <button class="btn-raincheck" id="raincheck-btn" onclick="useRaincheck()">Play It</button>
+    </div>
+
+    <div class="guest-cta" id="guest-cta" style="display:none">
+      <div class="guest-cta-text"><strong>Playing as guest.</strong> Sign in to save your scores and track history.</div>
+      <button class="btn btn-primary" style="flex-shrink:0" onclick="openAuthModal()">Sign In</button>
+    </div>
+
+    <!-- Today's Course — boxless, icons sit in the open space -->
+    <div class="course-section">
+      <div class="card-title">Today's Course</div>
+      <div class="puzzle-preview" id="puzzle-preview">
+        <div class="hole-preview"><div class="hp-num">Hole 1</div><div class="hp-target">—</div><div class="hp-par">—</div></div>
+        <div class="hole-preview"><div class="hp-num">Hole 2</div><div class="hp-target">—</div><div class="hp-par">—</div></div>
+        <div class="hole-preview"><div class="hp-num">Hole 3</div><div class="hp-target">—</div><div class="hp-par">—</div></div>
+      </div>
+    </div>
+
+    <!-- Play button sits below the course -->
+    <div id="difficulty-card" style="margin-top:20px">
+      <button class="btn btn-primary btn-full" id="start-btn" onclick="openDifficultyModal()" style="padding:16px 30px;font-size:1.05rem">
+        Play Today's Round
+      </button>
+    </div>
+
+    <!-- Completed-today scorecard, shown on the home screen instead of the play button -->
+    <div id="lobby-complete" style="display:none;margin-top:20px">
+      <div class="card-title" style="text-align:center;margin-bottom:10px">Your Card</div>
+      <div class="share-card-wrap"><canvas id="lobby-card-canvas" class="share-card-canvas" width="1080" height="1080" aria-label="Today's scorecard"></canvas></div>
+      <div style="text-align:center;margin-top:12px">
+        <button class="btn btn-primary" onclick="viewTodayResult()">View Full Results</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HOLE ══════════════════════════════════════════════════════════════════ -->
+<div id="screen-hole" class="screen">
+  <header>
+    <div class="header-left">
+      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+      <button class="btn-sm" onclick="document.getElementById('htp-modal').classList.add('active')">How to Play</button>
+    </div>
+    <div class="header-right">
+      <a id="hole-admin-link" href="/admin" style="display:none;font-family:'Oswald',sans-serif;font-size:0.74rem;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1px solid var(--border-gold);padding:6px 13px;border-radius:999px;transition:background 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'" onmouseout="this.style.background='transparent'">Admin</a>
+      <button class="btn-sm" onclick="backToMenu()">Menu</button>
+      <div class="profile-wrap" style="display:none">
+        <button class="profile-btn" onclick="toggleProfileMenu(event)">
+          <span class="profile-name"></span>
+          <span class="profile-streak" style="display:none"></span>
+          <span class="profile-caret">▾</span>
+        </button>
+        <div class="profile-menu">
+          <div class="pm-title">Recent Rounds</div>
+          <div class="pm-history"><div class="pm-empty">No rounds yet — play today!</div></div>
+          <button class="pm-logout" onclick="doLogout()">Log Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="main">
+    <!-- Info strip -->
+    <div class="hole-strip">
+      <div class="hs-stat">
+        <div class="hs-label">Hole</div>
+        <div class="hs-value accent" id="hh-hole">1</div>
+      </div>
+      <div class="hs-divider"></div>
+      <div class="hs-stat">
+        <div class="hs-label">Target</div>
+        <div class="hs-value" id="hh-target">—</div>
+      </div>
+      <div class="hs-divider"></div>
+      <div class="hs-stat">
+        <div class="hs-label">Par</div>
+        <div class="hs-value" id="hh-par">—</div>
+      </div>
+      <div class="hs-divider"></div>
+      <div class="hs-stat">
+        <div class="hs-label">Strokes</div>
+        <div class="hs-value" id="hh-strokes">0</div>
+      </div>
+      <div class="hs-divider"></div>
+      <div class="hs-stat">
+        <div class="hs-label">Mode</div>
+        <div class="hs-value" id="hh-difficulty" style="font-size:0.9rem">—</div>
+      </div>
+    </div>
+
+    <div class="hole-columns">
+      <!-- LEFT: controls -->
+      <div class="hole-left">
+        <div class="card bag-card" style="margin-bottom:0">
+          <div class="card-title">Your Bag</div>
+          <div class="bunker-warning" id="bunker-warning">In the bunker, next shot distance halved</div>
+          <div class="club-bag" id="club-bag"></div>
+        </div>
+
+        <div class="shot-input" id="shot-input-card" style="display:none">
+          <div class="card-title">Shot <span id="shot-club-label"></span></div>
+          <div class="autocomplete-wrap">
+            <input class="autocomplete-input" id="player-search" type="text"
+                   placeholder="Search player…" autocomplete="off"
+                   oninput="onPlayerSearch()" onkeydown="onSearchKeydown(event)">
+            <div class="autocomplete-dropdown" id="ac-dropdown"></div>
+          </div>
+          <select class="season-select" id="season-select" onchange="onSeasonSelect()">
+            <option value="">Select season</option>
+          </select>
+          <div class="shot-confirm-row" id="shot-preview">
+            <div class="sc-mystery">?</div>
+            <div style="flex:1;min-width:0">
+              <div class="sc-player" id="sp-player-name"></div>
+              <div class="sc-season" id="sp-season-label"></div>
+            </div>
+            <button class="btn btn-primary" id="confirm-shot-btn" onclick="confirmShot()" disabled>Swing</button>
+          </div>
+        </div>
+
+        <div id="shot-history-wrap" style="display:none">
+          <div class="history-toggle" id="history-toggle" onclick="toggleHistory()">
+            <span id="history-toggle-label">Shot History (0)</span>
+            <span class="ht-arrow">&#9660;</span>
+          </div>
+          <div class="history-body" id="history-body">
+            <ul class="shot-list" id="shot-history-list"></ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: vertical fairway (boxless; key data on top) -->
+      <div class="hole-right">
+        <div class="fairway-arena">
+          <div class="remaining-hero">
+            <div>
+              <span class="rem-big" id="remaining-val">—</span>
+              <span id="overshoot-badge" class="overshoot-badge" style="display:none">Past Pin</span>
+            </div>
+            <div class="rem-unit">yards to the pin</div>
+          </div>
+          <div class="hole-svg-wrap">
+            <svg id="hole-svg" viewBox="0 0 220 420" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div class="hazard-pills" id="hazard-pills"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ RESULT ════════════════════════════════════════════════════════════════ -->
+<div id="screen-result" class="screen">
+  <header>
+    <div class="header-left">
+      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+      <button class="btn-sm" onclick="document.getElementById('htp-modal').classList.add('active')">How to Play</button>
+    </div>
+    <div class="header-right">
+      <a id="result-admin-link" href="/admin" style="display:none;font-family:'Oswald',sans-serif;font-size:0.74rem;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1px solid var(--border-gold);padding:6px 13px;border-radius:999px;transition:background 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'" onmouseout="this.style.background='transparent'">Admin</a>
+      <button class="btn-sm" onclick="returnToLobby()">Menu</button>
+      <div class="profile-wrap" style="display:none">
+        <button class="profile-btn" onclick="toggleProfileMenu(event)">
+          <span class="profile-name"></span>
+          <span class="profile-streak" style="display:none"></span>
+          <span class="profile-caret">▾</span>
+        </button>
+        <div class="profile-menu">
+          <div class="pm-title">Recent Rounds</div>
+          <div class="pm-history"><div class="pm-empty">No rounds yet — play today!</div></div>
+          <button class="pm-logout" onclick="doLogout()">Log Out</button>
+        </div>
+      </div>
+    </div>
+  </header>
+  <div class="main" style="max-width:700px">
+    <!-- Milestone streak card (hidden until milestone hit) -->
+    <div class="milestone-card" id="milestone-card" style="display:none">
+      <div class="milestone-number" id="milestone-num">7</div>
+      <div class="milestone-label">Day Streak</div>
+      <div class="milestone-msg" id="milestone-msg"></div>
+    </div>
+
+    <!-- Hole of the Day callout -->
+    <div id="hole-callout-wrap" style="display:none"></div>
+
+    <!-- Rarity score -->
+    <div class="rarity-display" id="rarity-display" style="display:none">
+      <div>
+        <div class="rarity-num" id="rarity-num">—</div>
+        <div class="rarity-label">Pick Overlap<br>% of players sharing your picks</div>
+      </div>
+      <div style="color:var(--text-secondary);font-size:0.88rem;max-width:220px" id="rarity-desc"></div>
+    </div>
+
+    <!-- Landmark callouts -->
+    <div id="landmark-callouts-wrap"></div>
+
+    <div class="card">
+      <div class="card-title">Scorecard</div>
+      <table class="scorecard">
+        <thead><tr><th>Hole</th><th>Par</th><th>Strokes</th><th>Score</th></tr></thead>
+        <tbody id="scorecard-body"></tbody>
+        <tfoot><tr><td>Total</td><td id="sc-total-par">—</td><td id="sc-total-strokes">—</td><td id="sc-total-diff">—</td></tr></tfoot>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Share Your Round</div>
+      <div class="share-card-wrap">
+        <canvas id="share-card-canvas" class="share-card-canvas" width="1080" height="1080" aria-label="StatGolf scorecard"></canvas>
+      </div>
+      <div class="share-actions">
+        <button class="btn btn-primary btn-full" onclick="shareCard()" id="share-card-btn">Share Scorecard</button>
+        <button class="btn btn-secondary btn-full" onclick="copyShare()">Copy as Text</button>
+      </div>
+      <div class="share-box" id="share-text" style="display:none"></div>
+    </div>
+    <div class="card" id="guest-result-cta" style="display:none;text-align:center">
+      <div class="card-title">Save Your Scores</div>
+      <p style="color:var(--text-secondary);margin-bottom:16px;font-size:0.95rem">Create a free account to track your rounds, build a history, and compete daily.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="openAuthModal('register')">Create Account</button>
+        <button class="btn btn-secondary" onclick="openAuthModal('signin')">Sign In</button>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:10px;padding-bottom:24px">
+      <button class="link-btn" onclick="returnToLobby()">Back to Lobby</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TUTORIAL ══════════════════════════════════════════════════════════════ -->
+<div id="screen-tutorial" class="screen">
+  <header>
+    <div class="header-left">
+      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+    </div>
+    <div class="header-right">
+      <button class="btn-sm" onclick="skipTutorial()">Skip Tutorial</button>
+    </div>
+  </header>
+  <div class="main" style="max-width:700px">
+
+    <!-- Welcome card -->
+    <div id="tut-welcome" class="card" style="text-align:center;padding:38px 28px">
+      <div class="card-title">Welcome to StatGolf</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:2.1rem;font-weight:700;color:var(--gold);margin-bottom:10px">Know More. Lower Score.</div>
+      <p style="color:var(--text-secondary);font-size:1rem;line-height:1.65;margin-bottom:26px">Pick A Club and Name a Player.<br>Their Stat is your distance, Start Swinging.</p>
+      <button class="btn btn-primary btn-full" onclick="beginTutorial()">Play Tutorial Hole</button>
+      <div style="margin-top:12px">
+        <button class="btn btn-ghost" style="font-size:0.82rem" onclick="skipTutorial()">Skip</button>
+      </div>
+    </div>
+
+    <!-- Tutorial hole -->
+    <div id="tut-hole" style="display:none">
+      <div class="hole-strip" style="margin-bottom:12px">
+        <div class="hs-stat"><div class="hs-label">Target</div><div class="hs-value accent">5,540</div></div>
+        <div class="hs-divider"></div>
+        <div class="hs-stat"><div class="hs-label">Par</div><div class="hs-value">3</div></div>
+        <div class="hs-divider"></div>
+        <div class="hs-stat"><div class="hs-label">Strokes</div><div class="hs-value" id="tut-strokes">0</div></div>
+        <div class="hs-divider"></div>
+        <div class="hs-stat"><div class="hs-label">Remaining</div><div class="hs-value accent" id="tut-rem-strip">5,540</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-title">Your Bag</div>
+        <div id="tut-club-bag"></div>
+      </div>
+
+      <div class="card" id="tut-shot-card" style="display:none;margin-bottom:10px">
+        <div class="card-title">Shot <span id="tut-shot-label">Driver</span></div>
+        <!-- Pre-filled shot 1 -->
+        <div id="tut-prefilled" class="shot-confirm-row show">
+          <div style="flex:1;min-width:0">
+            <div class="sc-player">Peyton Manning</div>
+            <div class="sc-season">2013 · Passing Yards (NFL)</div>
+          </div>
+          <button class="btn btn-primary" id="tut-swing-1" onclick="tutSwing1()">Swing</button>
+        </div>
+        <!-- Free search shots 2+ -->
+        <div id="tut-free" style="display:none">
+          <div class="autocomplete-wrap">
+            <input class="autocomplete-input" id="tut-search" type="text"
+                   placeholder="Search any athlete…" autocomplete="off"
+                   data-category="nba_points_per_game"
+                   oninput="onTutSearch()" onkeydown="onTutKeydown(event)">
+            <div class="autocomplete-dropdown" id="tut-dropdown"></div>
+          </div>
+          <select class="season-select" id="tut-season" onchange="onTutSeason()">
+            <option value="">Select season</option>
+          </select>
+          <div class="shot-confirm-row" id="tut-preview">
+            <div class="sc-mystery">?</div>
+            <div style="flex:1;min-width:0">
+              <div class="sc-player" id="tut-p-name"></div>
+              <div class="sc-season" id="tut-p-season"></div>
+            </div>
+            <button class="btn btn-primary" id="tut-swing-free" onclick="tutSwingFree()" disabled>Swing</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="remaining-hero" style="margin-bottom:0">
+        <div><span class="rem-big" id="tut-rem-big">5,540</span></div>
+        <div class="rem-unit">yards to the pin</div>
+      </div>
+
+      <div id="tut-hist-wrap" style="display:none;margin-top:10px">
+        <div class="card" style="margin-bottom:0">
+          <div class="card-title">Shots Taken</div>
+          <ul class="shot-list" id="tut-hist-list"></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complete card -->
+    <div id="tut-done" class="card" style="display:none;text-align:center;padding:38px 28px">
+      <div class="card-title">You've Got It!</div>
+      <div style="font-family:'Oswald',sans-serif;font-size:1.9rem;font-weight:700;color:var(--gold);margin-bottom:10px">That's StatGolf.</div>
+      <p style="color:var(--text-secondary);font-size:1rem;line-height:1.65;margin-bottom:26px">Three holes, one swing at a time. A fresh course drops every morning — come back tomorrow and try to go lower.</p>
+      <button class="btn btn-primary btn-full" onclick="finishTutorial()">Play Today's Round</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ DIFFICULTY MODAL ═════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="diff-modal">
+  <div class="modal-box" style="max-width:380px;text-align:left">
+    <h2 style="text-align:center;margin-bottom:20px">Choose Difficulty</h2>
+    <button class="diff-modal-btn" onclick="startWithDifficulty('easy')">
+      <div class="dmb-name">Amateur</div>
+      <div class="dmb-rule">Gimme within 20 yards &mdash; Playing off a handicap</div>
+    </button>
+    <button class="diff-modal-btn" onclick="startWithDifficulty('hard')">
+      <div class="dmb-name">Scratch</div>
+      <div class="dmb-rule">Gimme within 10 yards &mdash; No stroke advantage</div>
+    </button>
+    <button class="btn btn-ghost btn-full" style="margin-top:6px" onclick="document.getElementById('diff-modal').classList.remove('active')">Cancel</button>
+  </div>
+</div>
+
+<!-- ═══ HOW TO PLAY MODAL ════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="htp-modal">
+  <div class="modal-box" style="max-width:500px;text-align:left">
+    <h2 style="text-align:center;margin-bottom:16px">How to Play</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;color:var(--text-secondary);font-size:0.92rem;line-height:1.6">
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">The Goal</span><br>Each hole has a target yardage. Hit the pin in as few shots as possible by picking real athletes — their stat values become your shot distances.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Taking a Shot</span><br>Select a club, search for an athlete, pick a season. Their stat value for that club's category becomes your distance — you won't see the number until after you swing.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Your Clubs</span><br>Each club uses a <strong style="color:var(--text-primary)">different stat category</strong>. The Driver (career yards, total points) covers big distances. Mid-irons use season stats. The Putter uses precision stats like assists or rings. The <strong style="color:var(--text-primary)">Driver is tee-only</strong> — used once per hole. All other clubs can be reused.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Strategy</span><br>Picking the right athlete matters. A player with 5,000 passing yards covers more ground than one with 2,000. Overshoot the pin and you'll need to chip back. Use precision stats to finish close.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Hazards</span><br><strong style="color:var(--bunker-text)">Bunker</strong> — next shot distance is halved. <strong style="color:var(--water-text)">Water</strong> — take a drop (+1 stroke) or rehit. Hazard yardage ranges are shown on the course.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Scoring</span><br>Par = expected strokes. Complete all 3 holes for your total. The <strong style="color:var(--text-primary)">Rarity</strong> score shows how unique your athlete picks were — lower means rarer.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Gimme</span><br>Get within the gimme range and the hole completes automatically. <em>Amateur: 20 yds · Scratch: 10 yds</em></div>
+    </div>
+    <div class="modal-actions" style="margin-top:20px">
+      <button class="btn btn-primary" onclick="document.getElementById('htp-modal').classList.remove('active')">Got It</button>
+      <button class="btn btn-secondary" onclick="launchTutorial()">Play Tutorial</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ WATER MODAL ═══════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="water-modal">
+  <div class="modal-box">
+    <h2>Water Hazard</h2>
+    <p id="water-modal-desc">Your ball landed in water. Choose your penalty option.</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="resolveWater('drop')">
+        Drop &mdash; +1 stroke<br>
+        <span style="font-size:0.7rem;opacity:0.75;font-family:'Source Sans 3',sans-serif;text-transform:lowercase;letter-spacing:0.04em" id="drop-pos-label"></span>
+      </button>
+      <button class="btn btn-danger" onclick="resolveWater('rehit')">Rehit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ HOLE COMPLETE MODAL ═══════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="hole-modal">
+  <div class="modal-box">
+    <h2 id="hole-modal-title"></h2>
+    <div class="modal-score" id="hole-modal-score"></div>
+    <p id="hole-modal-subtitle"></p>
+    <div class="hole-recap" id="hole-recap"></div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="advanceHole()" id="hole-modal-btn">Next Hole</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SHOT REVEAL OVERLAY ═══════════════════════════════════════════════════ -->
+<div id="shot-reveal-overlay">
+  <div class="rev-player-name" id="rev-player"></div>
+  <div class="rev-season-cat" id="rev-season-cat"></div>
+  <div class="rem-big" id="rev-dist">0</div>
+  <div class="rem-unit">yards</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══ TUTORIAL POPUP ════════════════════════════════════════════════════════ -->
+<div id="tut-popup-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:700;align-items:center;justify-content:center;padding:20px">
+  <div class="modal-box" style="max-width:460px;text-align:left">
+    <div style="font-family:'Source Sans 3',sans-serif;font-size:0.6rem;font-weight:700;color:var(--gold);letter-spacing:0.22em;text-transform:uppercase;margin-bottom:8px">Tutorial</div>
+    <h2 id="tut-popup-title" style="margin-bottom:12px;font-size:1.25rem"></h2>
+    <p id="tut-popup-body" style="color:var(--text-secondary);font-size:0.92rem;line-height:1.7;margin-bottom:22px"></p>
+    <div style="text-align:center">
+      <button class="btn btn-primary" id="tut-popup-btn" onclick="closeTutPopup()">Got It</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let currentUser = null, authToken = null, todayPuzzle = null;
+let activeRound = null, activeState = null, activeHole = null;
+let selectedClub = null, selectedPlayer = null, selectedSeason = null, selectedSeasonValue = null;
+let acTimer = null, acResults = [], acFocused = -1;
+let afterAuthAction = null;
+let catHints = {};
+
+const CATEGORIES = {
+  // NFL single-season
+  nfl_passing_yards:              { label: "Passing Yards (NFL)" },
+  nfl_rushing_yards:              { label: "Rushing Yards (NFL)" },
+  nfl_receiving_yards:            { label: "Receiving Yards (NFL)" },
+  nfl_passing_touchdowns:         { label: "Passing TDs (NFL)" },
+  nfl_rushing_touchdowns:         { label: "Rushing TDs (NFL)" },
+  nfl_receiving_touchdowns:       { label: "Receiving TDs (NFL)" },
+  nfl_receptions:                 { label: "Receptions (NFL)" },
+  nfl_sacks:                      { label: "Sacks (NFL)" },
+  nfl_interceptions:              { label: "Interceptions (NFL)" },
+  // NFL career
+  nfl_career_rushing_yards:       { label: "Career Rushing Yards (NFL)",       career: true },
+  nfl_career_receiving_yards:     { label: "Career Receiving Yards (NFL)",     career: true },
+  nfl_career_passing_yards:       { label: "Career Passing Yards (NFL)",       career: true },
+  nfl_career_touchdowns:          { label: "Career Touchdowns (NFL)",          career: true },
+  nfl_career_sacks:               { label: "Career Sacks (NFL)",               career: true },
+  // NBA single-season
+  nba_points_per_game:            { label: "Points Per Game (NBA)" },
+  nba_total_points:               { label: "Total Points in Season (NBA)" },
+  nba_assists_per_game:           { label: "Assists Per Game (NBA)" },
+  nba_total_assists:              { label: "Total Assists in Season (NBA)" },
+  nba_rebounds_per_game:          { label: "Rebounds Per Game (NBA)" },
+  nba_total_rebounds:             { label: "Total Rebounds in Season (NBA)" },
+  nba_3pointers_made:             { label: "3-Pointers Made in Season (NBA)" },
+  nba_steals_per_game:            { label: "Steals Per Game (NBA)" },
+  nba_blocks_per_game:            { label: "Blocks Per Game (NBA)" },
+  // NBA career
+  nba_career_points:              { label: "Career Points (NBA)",              career: true },
+  nba_career_assists:             { label: "Career Assists (NBA)",             career: true },
+  nba_career_rebounds:            { label: "Career Rebounds (NBA)",            career: true },
+  nba_career_3pointers:           { label: "Career 3-Pointers Made (NBA)",     career: true },
+  // MLB single-season
+  mlb_home_runs:                  { label: "Home Runs (MLB)" },
+  mlb_rbi:                        { label: "RBI (MLB)" },
+  mlb_hits:                       { label: "Hits (MLB)" },
+  mlb_stolen_bases:               { label: "Stolen Bases (MLB)" },
+  mlb_strikeouts_pitching:        { label: "Strikeouts Pitching (MLB)" },
+  mlb_saves:                      { label: "Saves (MLB)" },
+  mlb_wins_pitching:              { label: "Wins Pitching (MLB)" },
+  mlb_ops_plus:                   { label: "OPS+ (MLB)" },
+  // MLB career
+  mlb_career_home_runs:           { label: "Career Home Runs (MLB)",           career: true },
+  mlb_career_hits:                { label: "Career Hits (MLB)",                career: true },
+  mlb_career_rbi:                 { label: "Career RBI (MLB)",                 career: true },
+  mlb_career_strikeouts_pitching: { label: "Career Strikeouts Pitching (MLB)", career: true },
+  mlb_career_saves:               { label: "Career Saves (MLB)",               career: true },
+  // NHL single-season
+  nhl_goals:                      { label: "Goals (NHL)" },
+  nhl_points:                     { label: "Points (NHL)" },
+  nhl_assists:                    { label: "Assists (NHL)" },
+  nhl_penalty_minutes:            { label: "Penalty Minutes (NHL)" },
+  // NHL career
+  nhl_career_goals:               { label: "Career Goals (NHL)",               career: true },
+  nhl_career_points:              { label: "Career Points (NHL)",              career: true },
+  nhl_career_assists:             { label: "Career Assists (NHL)",             career: true },
+  // Crossover — all sports
+  career_games_played:            { label: "Career Games Played",              sport: "multi", career: true },
+};
+
+function formatCatLabel(cat) {
+  if (CATEGORIES[cat]) return CATEGORIES[cat].label;
+  const p = cat.split('_'), l = p[0].toUpperCase();
+  return p.slice(1).map(w => w[0].toUpperCase()+w.slice(1)).join(' ') + ` (${l})`;
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function showToast(msg, dur=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function scoreClass(d) { return d<0?'score-under':d>0?'score-over':'score-even'; }
+function scoreSymbol(d) {
+  if (d<=-2) return 'Eagle'; if (d===-1) return 'Birdie';
+  if (d===0) return 'Par'; if (d===1) return 'Bogey'; return '+'+d;
+}
+async function api(method, path, body) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (authToken) opts.headers['Authorization'] = `Bearer ${authToken}`;
+  if (body) opts.body = JSON.stringify(body);
+  return (await fetch(path, opts)).json();
+}
+
+// ── AUTH MODAL ────────────────────────────────────────────────────────────────
+function openAuthModal(tab) {
+  showAuthTab(tab||'signin');
+  document.getElementById('auth-modal').classList.add('active');
+  setTimeout(() => { const e=document.getElementById('login-username'); if(e&&e.offsetParent) e.focus(); }, 80);
+}
+function closeAuthModal() {
+  document.getElementById('auth-modal').classList.remove('active');
+  afterAuthAction = null;
+  document.getElementById('auth-error').classList.remove('show');
+}
+document.getElementById('auth-modal').addEventListener('click', e => {
+  if (e.target===document.getElementById('auth-modal')) closeAuthModal();
+});
+function showAuthTab(tab) {
+  document.getElementById('auth-signin-form').style.display   = tab==='signin'   ? '':'none';
+  document.getElementById('auth-register-form').style.display = tab==='register' ? '':'none';
+  document.getElementById('tab-signin').classList.toggle('active', tab==='signin');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  document.getElementById('auth-error').classList.remove('show');
+}
+async function doLogin() {
+  const u=document.getElementById('login-username').value.trim();
+  const p=document.getElementById('login-password').value;
+  const e=document.getElementById('auth-error'); e.classList.remove('show');
+  if (!u||!p) { e.textContent='Enter username and password'; e.classList.add('show'); return; }
+  const d=await api('POST','/api/login',{username:u,password:p});
+  if (d.error) { e.textContent=d.error; e.classList.add('show'); return; }
+  setUser(d); closeAuthModal();
+  const a=afterAuthAction; afterAuthAction=null; if(a) a(); else loadLobby();
+}
+async function doRegister() {
+  const u=document.getElementById('reg-username').value.trim();
+  const p=document.getElementById('reg-password').value;
+  const e=document.getElementById('auth-error'); e.classList.remove('show');
+  if (!u||!p) { e.textContent='Fill in all fields'; e.classList.add('show'); return; }
+  const d=await api('POST','/api/register',{username:u,password:p});
+  if (d.error) { e.textContent=d.error; e.classList.add('show'); return; }
+  setUser(d); closeAuthModal();
+  const a=afterAuthAction; afterAuthAction=null; if(a) a(); else loadLobby();
+}
+function setUser(d) {
+  currentUser={user_id:d.user_id,username:d.username,is_admin:d.is_admin};
+  authToken=d.token;
+  try { localStorage.setItem('statgolf_user',JSON.stringify(currentUser)); localStorage.setItem('statgolf_token',authToken); } catch(e){}
+  updateHeaderAuth();
+}
+function updateHeaderAuth() {
+  // Profile blocks are class-based (one per screen header) — update them all.
+  const si=document.getElementById('lobby-signin-btn');
+  const gc=document.getElementById('guest-cta');
+  const dc=document.getElementById('difficulty-card');
+  const adminLinks=['lobby-admin-link','hole-admin-link','result-admin-link']
+    .map(id=>document.getElementById(id)).filter(Boolean);
+  document.querySelectorAll('.profile-wrap').forEach(w=>w.style.display=currentUser?'':'none');
+  document.querySelectorAll('.profile-name').forEach(n=>n.textContent=currentUser?currentUser.username.toUpperCase():'');
+  if (currentUser) {
+    if(si) si.style.display='none';
+    adminLinks.forEach(a=>a.style.display=currentUser.is_admin?'':'none');
+    if(gc) gc.style.display='none';
+  } else {
+    if(si) si.style.display='';
+    adminLinks.forEach(a=>a.style.display='none');
+    if(gc) gc.style.display='';
+    closeProfileMenu();
+  }
+  // Play button always visible — guests can play too
+  if(dc) dc.style.display='';
+}
+function toggleProfileMenu(e){
+  if(e) e.stopPropagation();
+  const wrap=e.currentTarget.closest('.profile-wrap');
+  const menu=wrap && wrap.querySelector('.profile-menu');
+  const wasOpen=menu && menu.classList.contains('open');
+  closeProfileMenu();
+  if(menu && !wasOpen) menu.classList.add('open');
+}
+function closeProfileMenu(){ document.querySelectorAll('.profile-menu').forEach(m=>m.classList.remove('open')); }
+document.addEventListener('click', e=>{ if(!e.target.closest('.profile-wrap')) closeProfileMenu(); });
+async function doLogout() {
+  try { await api('POST','/api/logout',{}); } catch(e){}
+  currentUser=null; authToken=null;
+  try { localStorage.removeItem('statgolf_user'); localStorage.removeItem('statgolf_token'); } catch(e){}
+  returnToLobby();
+}
+function returnToLobby() { showScreen('screen-lobby'); updateHeaderAuth(); loadLobbyContent(); }
+function backToMenu() {
+  if (activeRound && !activeRound.completed) {
+    if (!confirm('Leave this round? Your progress is saved — you can resume it from the lobby.')) return;
+  }
+  returnToLobby();
+}
+function loadSession() {
+  try {
+    const s=localStorage.getItem('statgolf_user'), t=localStorage.getItem('statgolf_token');
+    if (s&&t) { const p=JSON.parse(s); if(p&&p.username){currentUser=p;authToken=t;return true;} }
+  } catch(e){}
+  return false;
+}
+
+// ── LOBBY ─────────────────────────────────────────────────────────────────────
+let selectedDifficulty = 'easy';
+
+function openDifficultyModal() {
+  document.getElementById('diff-modal').classList.add('active');
+}
+async function startWithDifficulty(difficulty) {
+  selectedDifficulty = difficulty;
+  document.getElementById('diff-modal').classList.remove('active');
+  await startRound();
+}
+async function loadLobby() {
+  const today=new Date().toISOString().slice(0,10);
+  // Check for existing round (works for both auth users and guest sessions)
+  const rnd=await api('GET',`/api/statgolf/round?date=${today}`,null);
+  if (rnd.round) {
+    activeRound=rnd.round;
+    if (activeRound.completed) {
+      // Already played today → land on the HOME screen with the scorecard shown there.
+      showScreen('screen-lobby'); updateHeaderAuth(); await loadLobbyContent();
+      return;
+    }
+    activeHole=rnd.current_hole; activeState=rnd.state;
+    showScreen('screen-hole'); renderHole(); return;
+  }
+  showScreen('screen-lobby'); updateHeaderAuth(); loadLobbyContent();
+}
+async function loadLobbyContent() {
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('lobby-date').textContent=
+    new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  // Default: show the play button, hide the completed-scorecard panel.
+  const dc=document.getElementById('difficulty-card'); if(dc) dc.style.display='';
+  const lc=document.getElementById('lobby-complete'); if(lc) lc.style.display='none';
+  const puzz=await fetch(`/api/statgolf/puzzle?date=${today}`).then(r=>r.json());
+  if (!puzz.error&&puzz.holes) {
+    todayPuzzle=puzz; renderPuzzlePreview(puzz);
+    const btn=document.getElementById('start-btn'); if(btn) btn.disabled=false;
+  } else {
+    const btn=document.getElementById('start-btn');
+    if(btn){btn.disabled=true;btn.textContent='No puzzle today';}
+  }
+  // If today's round is already complete, show the scorecard on the home screen.
+  const rnd=await api('GET',`/api/statgolf/round?date=${today}`,null);
+  if (rnd.round && rnd.round.completed) {
+    const res=await api('GET',`/api/statgolf/result?date=${today}`,null);
+    if (res && !res.error) { window._lastResult=res; showLobbyComplete(res); }
+  }
+  if (currentUser) {
+    const ru=document.getElementById('result-username'); if(ru) ru.textContent=currentUser.username.toUpperCase();
+    loadHistory();
+    loadStreak();
+  } else {
+    document.querySelectorAll('.pm-history').forEach(ph=>ph.innerHTML='<div class="pm-empty">No rounds yet — play today!</div>');
+    document.querySelectorAll('.profile-streak').forEach(ps=>ps.style.display='none');
+    document.getElementById('raincheck-banner').style.display='none';
+  }
+}
+
+async function loadCommunityPulse(date) {
+  try {
+    const d = await fetch(`/api/statgolf/community?date=${date}`).then(r=>r.json());
+    const pulse   = document.getElementById('community-pulse');
+    const cpCount = document.getElementById('cp-count');
+    const cpAvg   = document.getElementById('cp-avg');
+    if (!todayPuzzle) { pulse.style.display='none'; return; }
+    if (d.completed_count > 0) {
+      cpCount.textContent = `${d.completed_count.toLocaleString()} player${d.completed_count===1?'':'s'} finished today`;
+      const avg = d.avg_diff;
+      cpAvg.textContent = avg !== null ? `Avg score: ${avg > 0 ? '+' : ''}${avg}` : '';
+    } else {
+      cpCount.textContent = 'No one has finished yet';
+      cpAvg.textContent   = 'Be the first to complete today\'s round';
+    }
+    pulse.style.display = '';
+  } catch(e) {}
+}
+const SPORT_ICONS = { nfl:'🏈', nba:'🏀', mlb:'⚾', nhl:'🏒', multi:'⭐' };
+function getHoleSport(hole) {
+  const counts = {};
+  (hole.club_bag||[]).forEach(c => {
+    const s = (CATEGORIES[c.stat_category]||{}).sport||'nfl';
+    if (s !== 'multi') counts[s] = (counts[s]||0)+1;  // don't let crossover skew the icon
+  });
+  const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  // If all clubs are crossover categories, show the star
+  if (!top) return 'multi';
+  return top[0];
+}
+function parColour(par) {
+  if (par<=3) return 'var(--green-bright)';
+  if (par===4) return 'var(--gold)';
+  return '#F07070';
+}
+function renderPuzzlePreview(puzz) {
+  document.getElementById('puzzle-preview').innerHTML=puzz.holes.map(h=>{
+    const dist = h.target_distance!=null ? Number(h.target_distance).toLocaleString() : '—';
+    return `<div class="hole-preview">
+      <div class="hp-num">Hole ${h.hole_number}</div>
+      <div class="hp-target">${dist}</div>
+      <div class="hp-par">Par ${h.par}</div>
+    </div>`;
+  }).join('');
+}
+async function loadHistory() {
+  const lists=document.querySelectorAll('.pm-history');
+  if (!lists.length) return;
+  const d=await api('GET','/api/statgolf/history',null);
+  if (!d.history||!d.history.length) { lists.forEach(l=>l.innerHTML='<div class="pm-empty">No rounds yet — play today!</div>'); return; }
+  const html=d.history.slice(0,10).map(h=>{
+    const lbl=new Date(h.puzzle_date+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const done=!!h.completed;
+    const diff=h.total_par_diff;
+    const rightHtml=done
+      ? `<span class="${scoreClass(diff)}" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:1.05rem">${diff>0?'+'+diff:String(diff)}</span>`
+      : `<span style="font-family:'Source Sans 3',sans-serif;font-size:0.68rem;color:var(--accent);letter-spacing:0.04em">IN PROGRESS</span>`;
+    return `<div onclick="openHistoryEntry('${h.puzzle_date}',${done})" style="display:flex;justify-content:space-between;align-items:center;padding:11px 6px;border-bottom:1px solid var(--border);cursor:pointer;border-radius:4px;transition:background 0.12s" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+      <span style="font-family:'Source Sans 3',sans-serif;font-size:0.80rem;color:var(--text-primary)">${lbl}</span>
+      <span style="display:flex;align-items:center;gap:10px">${rightHtml}<span style="color:var(--text-muted);font-size:1rem;line-height:1">›</span></span>
+    </div>`;
+  }).join('');
+  lists.forEach(l=>l.innerHTML=html);
+}
+async function openHistoryEntry(puzzleDate, completed) {
+  closeProfileMenu();
+  if (completed) {
+    await loadResult(puzzleDate);
+  } else {
+    const d=await api('GET',`/api/statgolf/round?date=${puzzleDate}`,null);
+    if (d.round) {
+      activeRound=d.round; activeHole=d.current_hole; activeState=d.state;
+      showScreen('screen-hole'); renderHole();
+    } else {
+      showToast('Could not load that round.');
+    }
+  }
+}
+async function startRound() {
+  const today=new Date().toISOString().slice(0,10);
+  const d=await api('POST','/api/statgolf/start',{difficulty:selectedDifficulty,date:today});
+  if (d.error){showToast(d.error);return;}
+  activeRound=d.round; activeHole=d.current_hole; activeState=d.state;
+  todayPuzzle=todayPuzzle||{holes:[d.current_hole]};
+  showScreen('screen-hole'); renderHole();
+}
+
+// ── HOLE SCREEN ───────────────────────────────────────────────────────────────
+function renderHole() {
+  if (!activeHole||!activeState) return;
+  document.getElementById('hh-hole').textContent     = activeHole.hole_number;
+  document.getElementById('hh-target').textContent   = activeHole.target_distance.toLocaleString();
+  document.getElementById('hh-par').textContent      = activeHole.par;
+  document.getElementById('hh-strokes').textContent  = activeState.strokes;
+  const DIFF_LABELS = {easy: 'Amateur', hard: 'Scratch'};
+  document.getElementById('hh-difficulty').textContent = DIFF_LABELS[activeRound.difficulty] || activeRound.difficulty;
+  buildHoleCanvas(activeHole);
+  updateFairway(false);
+  renderClubBag(); renderShotHistory(); resetShotInput();
+  document.getElementById('bunker-warning').classList.toggle('show', activeState.bunker_debuff);
+}
+
+// ── TOP-DOWN HOLE CANVAS ──────────────────────────────────────────────────────
+function _bez(t,p0,p1,p2,p3){
+  const u=1-t;
+  return [u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0],
+          u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]];
+}
+function _bezTan(t,p0,p1,p2,p3){
+  const u=1-t;
+  const dx=3*(u*u*(p1[0]-p0[0])+2*u*t*(p2[0]-p1[0])+t*t*(p3[0]-p2[0]));
+  const dy=3*(u*u*(p1[1]-p0[1])+2*u*t*(p2[1]-p1[1])+t*t*(p3[1]-p2[1]));
+  const l=Math.sqrt(dx*dx+dy*dy)||1;
+  return [dx/l,dy/l];
+}
+
+// t=0 → tee, t=1 → pin
+const HOLE_SHAPES=[
+  {p0:[112,374],p1:[88,270],p2:[104,154],p3:[107,36]},   // H1: left dogleg
+  {p0:[108,374],p1:[132,266],p2:[116,152],p3:[113,36]},  // H2: right dogleg
+  {p0:[110,374],p1:[100,272],p2:[120,156],p3:[110,36]},  // H3: soft S
+];
+const DECOR_BUNKERS=[
+  [[0.36, 1,14,9],[0.63,-1,12,8]],
+  [[0.30,-1,13,8],[0.59, 1,11,8]],
+  [[0.27, 1,12,8],[0.51,-1,13,9],[0.72,1,10,7]],
+];
+
+function _buildEdges(shape,steps=54){
+  const {p0,p1,p2,p3}=shape;
+  const L=[],R=[];
+  for(let i=0;i<=steps;i++){
+    const t=i/steps;
+    const [cx,cy]=_bez(t,p0,p1,p2,p3);
+    const [tx,ty]=_bezTan(t,p0,p1,p2,p3);
+    const mid=Math.pow(Math.sin(Math.PI*t),0.55);
+    const teeFlare=t<0.13?(0.13-t)*200:0;
+    const greenFlare=t>0.82?(t-0.82)*175:0;
+    const w=20+13*mid+teeFlare+greenFlare;
+    L.push([cx-ty*w,cy+tx*w]);
+    R.push([cx+ty*w,cy-tx*w]);
+  }
+  return {L,R};
+}
+function buildHoleCanvas(hole){
+  const svg=document.getElementById('hole-svg');
+  if(!svg) return;
+  const n=(hole.hole_number-1)%3;
+  const shape=HOLE_SHAPES[n];
+  const {p0,p1,p2,p3}=shape;
+  const target=hole.target_distance;
+  // Scale the ball / flag / tee / green down as the hole gets longer, so a big-distance
+  // hole reads as a longer, larger hole. ~1.0 for short holes → ~0.5 for the longest.
+  const s=Math.max(0.5, Math.min(1.0, 1.25 - 0.16*Math.log10(Math.max(50,target))));
+  const r=(v)=> (v*s).toFixed(1);
+
+  const [px,py]=_bez(1,p0,p1,p2,p3); // pin
+  const [sx,sy]=_bez(0,p0,p1,p2,p3); // tee
+
+  // Hazard ovals: sized and rotated to cover exactly the yardage span on the bezier path
+  let hazardHtml='';
+  if(hole.hazard_bands&&hole.hazard_bands.length){
+    hole.hazard_bands.forEach(band=>{
+      const hi=Math.max(band.start,band.end), lo=Math.min(band.start,band.end);
+      // t0 = farther from pin (higher remaining), t1 = closer to pin (lower remaining)
+      const t0=Math.max(0,Math.min(1,1-hi/target));
+      const t1=Math.max(0,Math.min(1,1-lo/target));
+      const tMid=(t0+t1)/2;
+      const [hx,hy]=_bez(tMid,p0,p1,p2,p3);
+      // arc length between t0 and t1 so the oval spans exactly those yards
+      let arcLen=0, prev=_bez(t0,p0,p1,p2,p3);
+      for(let i=1;i<=10;i++){
+        const cur=_bez(t0+(t1-t0)*i/10,p0,p1,p2,p3);
+        arcLen+=Math.hypot(cur[0]-prev[0],cur[1]-prev[1]);
+        prev=cur;
+      }
+      // rotate oval so its long axis aligns with the hole direction at this point
+      const [ttx,tty]=_bezTan(tMid,p0,p1,p2,p3);
+      const angle=Math.atan2(tty,ttx)*180/Math.PI;
+      const halfLen=Math.max(13,arcLen/2);
+      const isWater=band.type==='water';
+      const halfW=isWater?16:12;
+      const fill=isWater?'#5BB8F5':'#F0D060';
+      const sc=isWater?'rgba(15,105,185,0.50)':'rgba(145,105,10,0.50)';
+      hazardHtml+=`<ellipse cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" rx="${halfLen.toFixed(1)}" ry="${halfW}" transform="rotate(${angle.toFixed(1)},${hx.toFixed(1)},${hy.toFixed(1)})" fill="${fill}" stroke="${sc}" stroke-width="2" opacity="0.88"/>`;
+    });
+  }
+
+  let dotHtml='';
+  [0.25,0.5,0.75].forEach(t=>{
+    const [dx,dy]=_bez(t,p0,p1,p2,p3);
+    dotHtml+=`<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="2" fill="rgba(255,255,255,0.28)"/>`;
+  });
+
+  svg.innerHTML=`
+<defs>
+  <filter id="ballShadow" x="-120%" y="-120%" width="340%" height="340%">
+    <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="rgba(0,0,0,0.65)"/>
+  </filter>
+  <filter id="fwGlow" x="-16%" y="-8%" width="132%" height="116%">
+    <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="rgba(50,185,45,0.20)"/>
+  </filter>
+  <radialGradient id="fwSheen" cx="44%" cy="38%" r="56%">
+    <stop offset="0%" stop-color="rgba(255,255,255,0.17)"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0.04)"/>
+  </radialGradient>
+  <radialGradient id="vig" cx="50%" cy="50%" r="68%">
+    <stop offset="0%" stop-color="transparent"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0.18)"/>
+  </radialGradient>
+</defs>
+<rect width="220" height="420" rx="16" fill="#2E6B24"/>
+<rect width="220" height="420" rx="16" fill="url(#vig)"/>
+<ellipse cx="110" cy="205" rx="96" ry="202" fill="#52C44A" filter="url(#fwGlow)"/>
+<ellipse cx="110" cy="205" rx="96" ry="202" fill="url(#fwSheen)"/>
+${dotHtml}
+${hazardHtml}
+<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r(22)}" fill="#2D7828"/>
+<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="${r(4.5)}" fill="#0E260C"/>
+<line x1="${px.toFixed(1)}" y1="${(py-3*s).toFixed(1)}" x2="${px.toFixed(1)}" y2="${(py-22*s).toFixed(1)}" stroke="#E0E0E0" stroke-width="${r(1.5)}" stroke-linecap="round"/>
+<polygon points="${px.toFixed(1)},${(py-22*s).toFixed(1)} ${(px+12*s).toFixed(1)},${(py-15*s).toFixed(1)} ${px.toFixed(1)},${(py-8*s).toFixed(1)}" fill="#EE2A3C"/>
+<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r(12)}" fill="#3A9A36"/>
+<circle cx="${sx.toFixed(1)}" cy="${sy.toFixed(1)}" r="${r(7.5)}" fill="#66D462"/>
+<rect width="220" height="420" fill="url(#vig)" opacity="0.20"/>
+<g id="sg-ball-g" style="transform:translate(${sx.toFixed(1)}px,${sy.toFixed(1)}px);transition:transform 0.75s cubic-bezier(0.34,1.10,0.64,1)">
+  <circle cx="0" cy="0" r="${r(9)}" fill="rgba(255,255,255,0.18)"/>
+  <circle id="sg-ball" cx="0" cy="0" r="${r(5)}" fill="white" filter="url(#ballShadow)"/>
+</g>`;
+
+  svg._shape=shape;
+  svg._target=target;
+}
+
+function updateBallOnSVG(pct,bounce){
+  const svg=document.getElementById('hole-svg');
+  if(!svg||!svg._shape) return;
+  const {p0,p1,p2,p3}=svg._shape;
+  const t=Math.max(0,Math.min(1,pct));
+  const [bx,by]=_bez(t,p0,p1,p2,p3);
+  const grp=document.getElementById('sg-ball-g');
+  if(!grp) return;
+  grp.style.transform=`translate(${bx.toFixed(1)}px,${by.toFixed(1)}px)`;
+  if(bounce){
+    const ball=document.getElementById('sg-ball');
+    if(ball){ball.classList.remove('sg-ball-pop');void ball.offsetWidth;ball.classList.add('sg-ball-pop');setTimeout(()=>ball.classList.remove('sg-ball-pop'),460);}
+  }
+}
+
+function updateFairway(bounce){
+  const target=activeHole.target_distance, running=activeState.running_total;
+  const remaining=Math.abs(target-running), overshoot=running>target;
+  const pct=Math.max(0,Math.min(1, target>0 ? 1-remaining/target : 0));
+
+  updateBallOnSVG(pct,bounce);
+
+  if(bounce){
+    const rv=document.getElementById('remaining-val');
+    rv.classList.remove('pulse');void rv.offsetWidth;rv.classList.add('pulse');
+    setTimeout(()=>rv.classList.remove('pulse'),560);
+  }
+
+  document.getElementById('remaining-val').textContent=remaining.toLocaleString();
+  document.getElementById('overshoot-badge').style.display=overshoot?'':'none';
+
+  const pills=document.getElementById('hazard-pills');
+  pills.innerHTML='';
+  if(activeHole.hazard_bands&&activeHole.hazard_bands.length){
+    const ballRemaining=target-running;
+    activeHole.hazard_bands.forEach(band=>{
+      const hi=Math.max(band.start,band.end),lo=Math.min(band.start,band.end);
+      // hi = near edge (farther from pin = closer to ball), lo = far edge (closer to pin)
+      const nearDist=ballRemaining-hi, farDist=ballRemaining-lo;
+      if(farDist<=0) return; // hazard is behind the ball, don't show
+      const isWater=band.type==='water';
+      const pill=document.createElement('span');
+      pill.className='hz-pill';
+      pill.style.cssText=isWater
+        ?'background:var(--water-bg);color:var(--water-text);border:1px solid var(--water-border)'
+        :'background:var(--bunker-bg);color:var(--bunker-text);border:1px solid var(--bunker-border)';
+      if(nearDist<0){
+        pill.textContent=`${isWater?'Water':'Bunker'}: IN HAZARD`;
+      } else {
+        pill.textContent=`${isWater?'Water':'Bunker'}: ${nearDist.toLocaleString()}–${farDist.toLocaleString()} yds from ball`;
+      }
+      pills.appendChild(pill);
+    });
+  }
+}
+
+function renderClubBag() {
+  const bag=activeHole.club_bag, used=activeState.clubs_used||[];
+  const isFirst=used.length===0, bunker=activeState.bunker_debuff;
+  document.getElementById('club-bag').innerHTML=bag.map(c=>{
+    const isDriver=c.club==='Driver', isUsed=used.includes(c.club);
+    const locked=(isFirst&&!isDriver)||(!isFirst&&isDriver&&isUsed);
+    const label=formatCatLabel(c.stat_category);
+    const isBunkerNext=!isDriver&&!isFirst&&bunker;
+    const q1=catHints[c.stat_category];
+    const hintHtml=q1!=null?`<div class="club-hint">${q1.toLocaleString()}+ yds</div>`:'';
+    let cls='club-btn';
+    if (selectedClub===c.club) cls+=' selected';
+    if (isBunkerNext&&!locked) cls+=' bunker-next';
+    return `<button class="${cls}" ${locked?'disabled':''} onclick="selectClub('${esc(c.club)}','${esc(c.stat_category)}')">
+      <div class="club-info">
+        <div class="club-name">${esc(c.club)}</div>
+        <div class="club-stat">${esc(label)}</div>
+        ${hintHtml}
+      </div>
+      ${isDriver&&isFirst          ?`<span class="club-badge">TEE</span>`:''}
+      ${isDriver&&!isFirst&&isUsed ?`<span class="club-badge">USED</span>`:''}
+    </button>`;
+  }).join('');
+}
+
+function renderShotHistory() {
+  const hist=activeState.shot_history||[];
+  const wrap=document.getElementById('shot-history-wrap');
+  if (!hist.length){wrap.style.display='none';return;}
+  wrap.style.display='';
+  document.getElementById('history-toggle-label').textContent=`Shot History (${hist.length})`;
+  document.getElementById('shot-history-list').innerHTML=hist.map((s,i)=>{
+    let fx='';
+    if (s.effect==='bunker') fx=`<span class="sl-fx bunker">BNKR</span>`;
+    if (s.effect==='water')  fx=`<span class="sl-fx water">H2O</span>`;
+    const debuff=s.debuff_applied?'<span style="color:var(--bunker-text);font-size:0.68rem"> ½</span>':'';
+    return `<li>
+      <span class="sl-num">${i+1}</span>
+      <span class="sl-club">${esc(s.club)}</span>
+      <span class="sl-player">${esc(s.player_name)} ${s.season_year===9999?'(Career)':'('+s.season_year+')'}</span>
+      <span class="sl-dist">${s.distance.toLocaleString()}${debuff}</span>
+      ${fx}
+    </li>`;
+  }).join('');
+}
+
+function toggleHistory() {
+  const toggle=document.getElementById('history-toggle'), body=document.getElementById('history-body');
+  const open=body.classList.toggle('open'); toggle.classList.toggle('open',open);
+}
+
+// ── SHOT INPUT ────────────────────────────────────────────────────────────────
+function selectClub(clubName, statCategory) {
+  selectedClub=clubName; selectedPlayer=null; selectedSeason=null; selectedSeasonValue=null;
+  document.getElementById('shot-club-label').textContent=clubName;
+  document.getElementById('shot-input-card').style.display='';
+  document.getElementById('player-search').value='';
+  document.getElementById('player-search').dataset.category=statCategory;
+  document.getElementById('ac-dropdown').classList.remove('open');
+  document.getElementById('season-select').classList.remove('show');
+  document.getElementById('season-select').innerHTML='<option value="">Select season</option>';
+  document.getElementById('shot-preview').classList.remove('show');
+  document.getElementById('confirm-shot-btn').disabled=true;
+  document.getElementById('player-search').focus();
+  renderClubBag();
+}
+function resetShotInput() {
+  selectedClub=null; selectedPlayer=null; selectedSeason=null; selectedSeasonValue=null;
+  document.getElementById('shot-input-card').style.display='none';
+  document.getElementById('ac-dropdown').classList.remove('open');
+}
+let acSearchController=null;
+function onPlayerSearch() {
+  const q=document.getElementById('player-search').value.trim();
+  const cat=document.getElementById('player-search').dataset.category;
+  clearTimeout(acTimer);
+  if (q.length<2){document.getElementById('ac-dropdown').classList.remove('open');return;}
+  acTimer=setTimeout(async()=>{
+    if (acSearchController) acSearchController.abort();
+    acSearchController=new AbortController();
+    try {
+      const res=await fetch(`/api/statgolf/autocomplete?category=${encodeURIComponent(cat)}&q=${encodeURIComponent(q)}`,
+        {headers:authToken?{Authorization:`Bearer ${authToken}`}:{},signal:acSearchController.signal});
+      const d=await res.json(); acResults=d.players||[]; acFocused=-1; renderDropdown();
+    } catch(e){if(e.name!=='AbortError') console.error(e);}
+  },180);
+}
+function renderDropdown() {
+  const dd=document.getElementById('ac-dropdown');
+  if (!acResults.length){dd.classList.remove('open');return;}
+  dd.innerHTML=acResults.map((p,i)=>
+    `<div class="ac-item${i===acFocused?' focused':''}" onclick="choosePlayerAt(${i})">
+      ${esc(p.player_name)}<span class="ac-sport">${p.sport.toUpperCase()}</span>
+    </div>`
+  ).join('');
+  dd.classList.add('open');
+}
+function onSearchKeydown(e) {
+  const dd=document.getElementById('ac-dropdown');
+  if (!dd.classList.contains('open')) return;
+  if (e.key==='ArrowDown'){acFocused=Math.min(acFocused+1,acResults.length-1);renderDropdown();e.preventDefault();}
+  if (e.key==='ArrowUp')  {acFocused=Math.max(acFocused-1,0);renderDropdown();e.preventDefault();}
+  if (e.key==='Enter'&&acFocused>=0){choosePlayerAt(acFocused);e.preventDefault();}
+  if (e.key==='Escape'){dd.classList.remove('open');}
+}
+function choosePlayerAt(i) { const p=acResults[i]; if(p) choosePlayer(p.player_id,p.player_name,p.sport); }
+async function choosePlayer(playerId, playerName, sport) {
+  document.getElementById('player-search').value=playerName;
+  document.getElementById('ac-dropdown').classList.remove('open');
+  selectedPlayer={id:playerId,name:playerName,sport};
+  const cat=document.getElementById('player-search').dataset.category;
+  const res=await api('GET',`/api/statgolf/seasons?player_id=${encodeURIComponent(playerId)}&category=${encodeURIComponent(cat)}`,null);
+  const seasons=res.seasons||[];
+  const sel=document.getElementById('season-select');
+  sel.innerHTML='<option value="">Select season</option>'+
+    seasons.map(s=>`<option value="${s.season_year}" data-value="${s.value}">${s.season_year===9999?'Career Total':s.season_year}</option>`).join('');
+  sel.classList.add('show');
+  selectedSeason=null; selectedSeasonValue=null;
+  document.getElementById('shot-preview').classList.remove('show');
+  document.getElementById('confirm-shot-btn').disabled=true;
+}
+function onSeasonSelect() {
+  const sel=document.getElementById('season-select'), opt=sel.options[sel.selectedIndex];
+  if (!sel.value){
+    document.getElementById('shot-preview').classList.remove('show');
+    document.getElementById('confirm-shot-btn').disabled=true; return;
+  }
+  selectedSeason=parseInt(sel.value,10);
+  selectedSeasonValue=parseFloat(opt.dataset.value);
+  document.getElementById('sp-player-name').textContent=selectedPlayer?.name||'';
+  document.getElementById('sp-season-label').textContent=selectedSeason===9999?'Career Total':`${selectedSeason} season`;
+  document.getElementById('shot-preview').classList.add('show');
+  document.getElementById('confirm-shot-btn').disabled=false;
+}
+async function confirmShot() {
+  if (!selectedClub||!selectedPlayer||!selectedSeason) return;
+  const btn = document.getElementById('confirm-shot-btn');
+  btn.disabled = true;
+
+  // Fire API call immediately — response arrives while overlay is showing
+  const today = activeRound.puzzle_date;
+  const shotPromise = api('POST', '/api/statgolf/shot', {
+    date: today, club: selectedClub,
+    player_id: selectedPlayer.id, season_year: selectedSeason
+  });
+
+  // Show reveal overlay
+  const overlay   = document.getElementById('shot-reveal-overlay');
+  const revPlayer = document.getElementById('rev-player');
+  const revCat    = document.getElementById('rev-season-cat');
+  const revDist   = document.getElementById('rev-dist');
+  revPlayer.textContent = selectedPlayer.name;
+  const catLabel = formatCatLabel(document.getElementById('player-search').dataset.category);
+  revCat.textContent = `${selectedSeason === 9999 ? 'Career' : selectedSeason} · ${catLabel}`;
+  revDist.textContent = '?';
+  revDist.className = 'rem-big';
+  overlay.classList.add('active');
+
+  // Await API response
+  const d = await shotPromise;
+
+  if (d.error) {
+    overlay.classList.remove('active');
+    showToast(d.error);
+    btn.disabled = false;
+    return;
+  }
+
+  // Count up from 0 to distance (500ms)
+  const finalDist = d.shot.distance;
+  await new Promise(resolve => {
+    let start = null;
+    const dur = 500;
+    function step(ts) {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / dur, 1);
+      revDist.textContent = Math.round(finalDist * p).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+      else { revDist.textContent = finalDist.toLocaleString(); resolve(); }
+    }
+    requestAnimationFrame(step);
+  });
+
+  // Flash colour based on progress made
+  const remaining = d.state ? d.state.remaining : 0;
+  const target    = activeHole.target_distance;
+  const pct       = finalDist / target;
+  revDist.classList.add(pct >= 0.25 ? 'flash-green' : pct >= 0.08 ? 'flash-amber' : 'flash-red');
+  await new Promise(r => setTimeout(r, 380));
+
+  overlay.classList.remove('active');
+  handleShotResponse(d);
+}
+function handleShotResponse(d) {
+  activeState=d.state; resetShotInput(); updateFairway(true); renderClubBag(); renderShotHistory();
+  document.getElementById('hh-strokes').textContent=activeState.strokes;
+  document.getElementById('bunker-warning').classList.toggle('show',activeState.bunker_debuff);
+  if (activeState.pending_water){showWaterModal(d);return;}
+  if (d.hole_complete){showHoleModal(d);}
+}
+
+// ── WATER MODAL ───────────────────────────────────────────────────────────────
+let pendingWaterDate=null;
+function showWaterModal(d) {
+  pendingWaterDate=activeRound.puzzle_date;
+  const dropInfo = activeState.pending_water;
+  document.getElementById('water-modal-desc').textContent=
+    `Your ball landed in water (${activeState.remaining.toLocaleString()} yards remaining). Choose your penalty option.`;
+  document.getElementById('drop-pos-label').textContent=
+    dropInfo && dropInfo.drop_remaining !== undefined
+      ? `drops to ${dropInfo.drop_remaining.toLocaleString()} yds remaining`
+      : 'ball moves to safe edge';
+  document.getElementById('water-modal').classList.add('active');
+}
+async function resolveWater(choice) {
+  document.getElementById('water-modal').classList.remove('active');
+  const today=pendingWaterDate||new Date().toISOString().slice(0,10);
+  const d=await api('POST','/api/statgolf/water',{date:today,choice});
+  if (d.error){showToast(d.error);return;}
+  activeState=d.state; updateFairway(true); renderClubBag(); renderShotHistory();
+  document.getElementById('hh-strokes').textContent=activeState.strokes;
+  if (d.hole_complete) showHoleModal(d);
+  else showToast(choice==='drop'?'Dropped — +1 stroke penalty':'Replaying the shot');
+}
+
+// ── HOLE COMPLETE MODAL ───────────────────────────────────────────────────────
+let pendingRoundComplete=null;
+function showHoleModal(d) {
+  const res=d.hole_result, diff=res.par_diff;
+  document.getElementById('hole-modal-title').textContent=`Hole ${res.hole_number} Complete`;
+  const sEl=document.getElementById('hole-modal-score');
+  const hmNum=(diff>0?`+${diff}`:String(diff));
+  sEl.textContent = /\d/.test(res.score_label) ? hmNum : `${hmNum} ${res.score_label}`;
+  sEl.className=`modal-score ${diff<0?'under':diff>0?'over':'even'}`;
+  document.getElementById('hole-modal-subtitle').textContent=`${res.strokes} strokes (par ${res.par})`;
+  document.getElementById('hole-recap').innerHTML=res.shot_history.map(s=>
+    `<div class="recap-shot">
+      <span>${esc(s.club)} ${esc(s.player_name)} ${s.season_year===9999?'(Career)':s.season_year}</span>
+      <span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">${s.distance.toLocaleString()} yds</span>
+    </div>`
+  ).join('');
+  const btn=document.getElementById('hole-modal-btn');
+  if (d.round_complete){btn.textContent='See Results';pendingRoundComplete=d.round_result;}
+  else {btn.textContent='Next Hole';pendingRoundComplete=null;}
+  document.getElementById('hole-modal').classList.add('active');
+}
+function advanceHole() {
+  document.getElementById('hole-modal').classList.remove('active');
+  if (pendingRoundComplete) {
+    // Always fetch full enriched result (rarity, callouts, hole stats)
+    loadResult(activeRound.puzzle_date);
+    return;
+  }
+  const today=activeRound.puzzle_date;
+  api('GET',`/api/statgolf/round?date=${today}`,null).then(d=>{
+    if (d.round){activeRound=d.round;activeHole=d.current_hole;activeState=d.state;renderHole();}
+  });
+}
+
+// ── RESULT ────────────────────────────────────────────────────────────────────
+function showResultScreen(result) {
+  showScreen('screen-result');
+  let tP=0,tS=0;
+  // Each hole row is clickable — expands to show the players used on that hole.
+  document.getElementById('scorecard-body').innerHTML=result.holes.map(h=>{
+    tP+=h.par;tS+=h.strokes;
+    const d=h.par_diff,sign=d>0?`+${d}`:String(d);
+    const shots=(h.shots||[]).map(s=>{
+      const yr = s.season_year===9999 ? 'Career' : s.season_year;
+      return `<div class="hole-shot"><span>${esc(s.club)} ${esc(s.player_name||'')} <span class="hs-yr">${yr}</span></span><span class="hs-dist">${(s.distance||0).toLocaleString()} yds</span></div>`;
+    }).join('');
+    return `<tr class="sc-row" onclick="toggleHoleDetail(${h.hole_number})"><td>Hole ${h.hole_number} <span class="sc-caret" id="sc-caret-${h.hole_number}">▾</span></td><td>${h.par}</td><td>${h.strokes}</td><td class="${scoreClass(d)}">${sign}</td></tr>
+      <tr class="sc-detail" id="sc-detail-${h.hole_number}" style="display:none"><td colspan="4">${shots||'<div class="hole-shot" style="color:var(--text-muted)">No shots recorded</div>'}</td></tr>`;
+  }).join('');
+  document.getElementById('sc-total-par').textContent=tP;
+  document.getElementById('sc-total-strokes').textContent=tS;
+  const td=tS-tP;
+  const tEl=document.getElementById('sc-total-diff');
+  tEl.textContent=td>0?`+${td}`:String(td); tEl.className=scoreClass(td);
+  document.getElementById('share-text').textContent=result.share_string;
+  window._lastResult=result;
+  renderShareCard(result);
+  const grc=document.getElementById('guest-result-cta');
+  if(grc) grc.style.display=currentUser?'none':'';
+
+  // ── Rarity score ──────────────────────────────────────────────────────
+  const rarityWrap = document.getElementById('rarity-display');
+  if (result.rarity !== null && result.rarity !== undefined) {
+    document.getElementById('rarity-num').textContent = result.rarity + '%';
+    const pct = result.rarity;
+    let desc = pct <= 10 ? 'Extremely rare — your picks were more obscure than 90%+ of players.'
+             : pct <= 30 ? 'Rare picks — you went deep in the record books.'
+             : pct <= 60 ? 'Mixed — some popular picks, some hidden gems.'
+             :              'Common picks — try more obscure athletes for a lower score.';
+    document.getElementById('rarity-desc').textContent = desc;
+    rarityWrap.style.display = '';
+  } else {
+    rarityWrap.style.display = 'none';
+  }
+
+  // ── Hole of the Day callout ───────────────────────────────────────────
+  const hcWrap = document.getElementById('hole-callout-wrap');
+  hcWrap.innerHTML = '';
+  if (result.hole_difficulty && result.hole_difficulty.length >= 3) {
+    const hardest = result.hole_difficulty.reduce((a,b) => b.avg_diff > a.avg_diff ? b : a);
+    if (hardest.avg_diff > 0.4 && hardest.count >= 3) {
+      const pctOver = Math.round((hardest.avg_diff / 1) * 68); // rough estimate
+      hcWrap.innerHTML = `<div class="hole-callout">
+        <strong>Hole ${hardest.hole_number}</strong> stumped most players today —
+        average score was <strong>+${hardest.avg_diff.toFixed(1)}</strong> over par.
+      </div>`;
+    }
+  }
+
+  // ── Landmark callouts ────────────────────────────────────────────────
+  const lcWrap = document.getElementById('landmark-callouts-wrap');
+  lcWrap.innerHTML = '';
+  (result.landmark_callouts || []).forEach(lc => {
+    const action = lc.cleared
+      ? `You matched <strong>${esc(lc.landmark_player)}</strong>'s record (${lc.landmark_value.toLocaleString()} yds) with <strong>${esc(lc.shot_player)}</strong>.`
+      : `You flew the <strong>${esc(lc.label)}</strong> landmark — you knew exactly what you were aiming for.`;
+    lcWrap.innerHTML += `<div class="landmark-callout">
+      <div class="lc-badge">Record Zone</div>
+      <div style="color:var(--text-secondary);font-size:0.9rem">${action}</div>
+    </div>`;
+  });
+
+  // ── Milestone streak check (streak bundled in result response) ───────
+  document.getElementById('milestone-card').style.display = 'none';
+  if (currentUser && result.streak != null) {
+    const milestones = {7:'🔥 One Week Strong', 30:'🏆 30-Day Legend', 100:'👑 100-Day Champion'};
+    if (milestones[result.streak]) {
+      document.getElementById('milestone-num').textContent = result.streak;
+      document.getElementById('milestone-msg').textContent = milestones[result.streak];
+      document.getElementById('milestone-card').style.display = '';
+    }
+  }
+}
+async function loadResult(puzzleDate) {
+  const d=await api('GET',`/api/statgolf/result?date=${puzzleDate}`,null);
+  if (!d.error) showResultScreen(d);
+}
+// Home-screen completed-round panel: scorecard image in place of the play button.
+function showLobbyComplete(result){
+  const lc=document.getElementById('lobby-complete'); if(!lc) return;
+  const dc=document.getElementById('difficulty-card'); if(dc) dc.style.display='none';
+  lc.style.display='';
+  renderShareCard(result, 'lobby-card-canvas');
+}
+function viewTodayResult(){ loadResult(new Date().toISOString().slice(0,10)); }
+// Post-match: expand a hole row to reveal the players used on that hole.
+function toggleHoleDetail(n){
+  const row=document.getElementById('sc-detail-'+n);
+  const caret=document.getElementById('sc-caret-'+n);
+  if(!row) return;
+  const open=row.style.display!=='none';
+  row.style.display=open?'none':'';
+  if(caret) caret.style.transform=open?'':'rotate(180deg)';
+}
+function copyShare() {
+  navigator.clipboard.writeText(document.getElementById('share-text').textContent)
+    .then(()=>showToast('Copied to clipboard!')).catch(()=>showToast('Select text manually to copy'));
+}
+
+// ── Scorecard image ─────────────────────────────────────────────────────────────
+// The card is YOUR image (static/scorecard.png) with only the round's numbers stamped
+// on top. To restyle it, just edit static/scorecard.png in any image editor. If you move
+// the grid in your design, update CARD_LAYOUT below so the numbers land in your cells —
+// every value is drawn CENTERED on the coordinate given (canvas is 1080×1080).
+const SHARE_URL='statgolf.com';
+const SCORECARD_IMG='/static/scorecard.png';
+// CARD_LAYOUT is loaded from scorecard_layout.json in the project root (injected by Flask).
+// Edit that file to align the numbers to your scorecard design — changes apply on refresh.
+const CARD_LAYOUT = {{ card_layout | tojson }};
+
+// Preload the background once; redraw every pending canvas when it finishes loading.
+const _pendingCards={};   // canvasId -> result, so late font/image loads can redraw
+let _cardBg=new Image(), _cardBgReady=false;
+_cardBg.onload =()=>{ _cardBgReady=true;  Object.keys(_pendingCards).forEach(id=>renderShareCard(_pendingCards[id], id)); };
+_cardBg.onerror=()=>{ _cardBgReady=false; };
+_cardBg.src=SCORECARD_IMG;
+
+function renderShareCard(result, canvasId='share-card-canvas'){
+  const cv=document.getElementById(canvasId);
+  if(!cv) return;
+  _pendingCards[canvasId]=result;
+  // Draw once web fonts are ready so numbers use Oswald rather than a fallback.
+  const draw=()=>_drawShareCard(cv,result);
+  if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(draw); } else { draw(); }
+}
+function _drawShareCard(cv,result){
+  const L=CARD_LAYOUT;
+  cv.width=L.width; cv.height=L.height;
+  const ctx=cv.getContext('2d');
+  ctx.clearRect(0,0,L.width,L.height);
+  if(_cardBgReady) ctx.drawImage(_cardBg,0,0,L.width,L.height);   // your scorecard.png
+
+  const holes=result.holes||[];
+  const sgn=n=> n>0?('+'+n):String(n);
+  const totPar  = holes.reduce((a,h)=>a+h.par,0);
+  const totStr  = holes.reduce((a,h)=>a+h.strokes,0);
+  const totDiff = totStr-totPar;
+  ctx.textBaseline='middle';
+
+  // ── date ──
+  if(L.date.show){
+    ctx.fillStyle=L.ink; ctx.textAlign=L.date.align||'right';
+    ctx.font='600 '+L.date.size+'px Oswald, Arial, sans-serif';
+    ctx.fillText(fmtCardDate(result.date), L.date.x, L.date.y);
+  }
+
+  // ── the round's numbers, stamped into the grid cells ──
+  const g=L.grid;
+  const colCX=i=> g.firstColCenterX + i*g.colStep;
+  ctx.textAlign='center';
+  holes.forEach((h,i)=>{
+    const x=colCX(i);
+    ctx.fillStyle=L.ink; ctx.font='500 '+g.size+'px "Source Sans 3", Arial, sans-serif';
+    if(h.target_distance) ctx.fillText(Number(h.target_distance).toLocaleString(), x, g.rows.distance);
+    ctx.fillText(String(h.par),     x, g.rows.par);
+    ctx.fillText(String(h.strokes), x, g.rows.score);
+    ctx.fillStyle = h.par_diff>0?L.diffPos:h.par_diff<0?L.diffNeg:L.ink;
+    ctx.fillText(sgn(h.par_diff),   x, g.rows.diff);
+  });
+  // TOT column (immediately after the last hole)
+  const tx=colCX(holes.length);
+  ctx.fillStyle=L.ink; ctx.font='700 '+g.size+'px Oswald, Arial, sans-serif';
+  ctx.fillText(String(totPar), tx, g.rows.par);
+  ctx.fillText(String(totStr), tx, g.rows.score);
+  ctx.fillStyle = totDiff>0?L.diffPos:totDiff<0?L.diffNeg:L.ink;
+  ctx.fillText(sgn(totDiff), tx, g.rows.diff);
+}
+function fmtCardDate(s){ try{ const dt=new Date(s+'T00:00:00'); return dt.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}); }catch(e){ return s||''; } }
+
+async function shareCard(){
+  const cv=document.getElementById('share-card-canvas');
+  if(!cv){ return copyShare(); }
+  const r=window._lastResult||{};
+  const text=`⛳ StatGolf ${fmtCardDate(r.date)} — ${(r.score_label||'')} (${(r.total_par_diff>0?'+':'')+r.total_par_diff}). Play at ${SHARE_URL}`;
+  const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
+  if(!blob){ return copyShare(); }
+  const file=new File([blob],'statgolf-scorecard.png',{type:'image/png'});
+  // Native share sheet with the image (mobile) — the viral path.
+  if(navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],text}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
+  }
+  // Desktop / unsupported: try image to clipboard, else download.
+  try{
+    if(navigator.clipboard&&window.ClipboardItem){
+      await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+      showToast('Scorecard image copied!'); return;
+    }
+  }catch(e){}
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='statgolf-scorecard.png'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('Scorecard saved');
+}
+
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape'){
+    closeAuthModal();
+    closeProfileMenu();
+    document.getElementById('water-modal').classList.remove('active');
+    document.getElementById('htp-modal').classList.remove('active');
+    document.getElementById('diff-modal').classList.remove('active');
+  }
+});
+document.getElementById('htp-modal').addEventListener('click', e=>{
+  if (e.target===document.getElementById('htp-modal')) document.getElementById('htp-modal').classList.remove('active');
+});
+
+// ── STREAK & RAINCHECK ────────────────────────────────────────────────────────
+async function loadStreak() {
+  try {
+    const d = await api('GET', '/api/statgolf/streak', null);
+    const banner = document.getElementById('raincheck-banner');
+    // Streak shows next to the profile name as a single flame+number — only from 2+.
+    document.querySelectorAll('.profile-streak').forEach(ps=>{
+      if (d.streak >= 2) { ps.textContent = `🔥${d.streak}`; ps.style.display = ''; }
+      else { ps.style.display = 'none'; }
+    });
+    if (d.raincheck && d.raincheck.available) {
+      const dt  = new Date(d.raincheck.date + 'T12:00:00');
+      const lbl = dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      document.getElementById('raincheck-desc').textContent =
+        `You missed ${lbl}. Play it now to save your streak.`;
+      document.getElementById('raincheck-btn').dataset.date = d.raincheck.date;
+      banner.style.display = '';
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch(e) {}
+}
+async function useRaincheck() {
+  const btn  = document.getElementById('raincheck-btn');
+  const date = btn.dataset.date;
+  if (!date) return;
+  btn.disabled = true;
+  const existing = await api('GET', `/api/statgolf/round?date=${date}`, null);
+  if (existing.round) {
+    if (existing.round.completed) { await loadResult(date); return; }
+    activeRound=existing.round; activeHole=existing.current_hole; activeState=existing.state;
+    showScreen('screen-hole'); renderHole(); return;
+  }
+  const d = await api('POST', '/api/statgolf/start',
+    {difficulty: selectedDifficulty, date, is_raincheck: true});
+  if (d.error) { showToast(d.error); btn.disabled=false; return; }
+  activeRound=d.round; activeHole=d.current_hole; activeState=d.state;
+  showScreen('screen-hole'); renderHole();
+}
+
+// ── TUTORIAL ──────────────────────────────────────────────────────────────────
+const TUT_TARGET = 5540; // tutorial hole target in yards
+let tutRemaining=TUT_TARGET, tutStrokes=0, tutShots=[], tutRunningTotal=0;
+let tutClub=null, tutPlayer=null, tutSeason=null, tutSeasonVal=null;
+let tutAcTimer=null, tutAcResults=[], tutAcFocused=-1;
+let tutPopupCallback=null, tutPopupOpen=false;
+
+// Shot 1 (Driver): NFL passing yards — Peyton Manning 2013, pre-filled player + year
+// Shot 2 (5-Iron): MLB home runs — Barry Bonds pre-filled, player picks year
+// Shot 3 (Putter): NBA points per game — fully free choice
+const TUT_CLUBS=[
+  {club:'Driver', stat_category:'nfl_passing_yards'},
+  {club:'5-Iron', stat_category:'mlb_home_runs'},
+  {club:'Putter', stat_category:'nba_points_per_game'},
+];
+
+// ── TUTORIAL POPUP SYSTEM ─────────────────────────────────────────────────────
+function showTutPopup(title, body, btnText, onClose) {
+  document.getElementById('tut-popup-title').textContent = title;
+  document.getElementById('tut-popup-body').innerHTML = body;
+  document.getElementById('tut-popup-btn').textContent = btnText || 'Got It';
+  tutPopupCallback = onClose || null;
+  tutPopupOpen = true;
+  document.getElementById('tut-popup-overlay').style.display = 'flex';
+}
+function closeTutPopup() {
+  document.getElementById('tut-popup-overlay').style.display = 'none';
+  tutPopupOpen = false;
+  const cb = tutPopupCallback; tutPopupCallback = null;
+  if (cb) cb();
+}
+
+function beginTutorial() {
+  document.getElementById('tut-welcome').style.display='none';
+  document.getElementById('tut-hole').style.display='';
+  document.getElementById('tut-rem-strip').textContent = TUT_TARGET.toLocaleString();
+  document.getElementById('tut-rem-big').textContent   = TUT_TARGET.toLocaleString();
+  document.getElementById('tut-strokes').textContent   = '0';
+  renderTutClubBag();
+  selectTutClub('Driver');
+  showTutPopup(
+    'Your First Hole',
+    'This is a <strong style="color:var(--gold)">par 3</strong>, 5,540 yards to the pin. Each club maps to a different sport\'s stat — NFL, MLB, and NBA — and a player\'s stat value becomes your shot distance in yards.<br><br>Your Driver is loaded: <strong style="color:var(--text-primary)">Peyton Manning, 2013</strong> — he threw for 5,477 passing yards, so he carries the ball <strong style="color:var(--gold)">5,477 yards</strong> toward the pin. Hit Swing to tee off.',
+    'Let\'s Go'
+  );
+}
+function skipTutorial() {
+  try { localStorage.setItem('statgolf_tutorial_done','1'); } catch(e){}
+  showScreen('screen-lobby'); updateHeaderAuth(); loadLobbyContent();
+}
+function finishTutorial() {
+  try { localStorage.setItem('statgolf_tutorial_done','1'); } catch(e){}
+  showScreen('screen-lobby'); updateHeaderAuth(); loadLobbyContent();
+}
+function launchTutorial() {
+  document.getElementById('htp-modal').classList.remove('active');
+  tutRemaining=TUT_TARGET; tutStrokes=0; tutShots=[]; tutRunningTotal=0;
+  tutClub=null; tutPlayer=null; tutSeason=null; tutSeasonVal=null;
+  tutAcResults=[]; tutAcFocused=-1; tutPopupOpen=false;
+  document.getElementById('tut-popup-overlay').style.display='none';
+  document.getElementById('tut-welcome').style.display='';
+  document.getElementById('tut-hole').style.display='none';
+  document.getElementById('tut-done').style.display='none';
+  document.getElementById('tut-rem-strip').textContent=TUT_TARGET;
+  document.getElementById('tut-rem-big').textContent=TUT_TARGET;
+  document.getElementById('tut-strokes').textContent='0';
+  document.getElementById('tut-hist-wrap').style.display='none';
+  document.getElementById('tut-hist-list').innerHTML='';
+  document.getElementById('tut-shot-card').style.display='none';
+  showScreen('screen-tutorial');
+}
+
+function renderTutClubBag() {
+  document.getElementById('tut-club-bag').innerHTML=TUT_CLUBS.map(c=>{
+    const isDriver = c.club==='Driver';
+    const isDriverUsed = isDriver && tutStrokes>0;
+    // Lock clubs outside the current phase so the tutorial is step-by-step
+    let locked;
+    if (tutPopupOpen)          locked = true;
+    else if (tutStrokes===0)   locked = !isDriver;
+    else if (tutStrokes===1)   locked = c.club!=='5-Iron';
+    else                       locked = c.club!=='Putter' || isDriverUsed;
+    const statLabel = formatCatLabel(c.stat_category);
+    const q1=catHints[c.stat_category];
+    const hintHtml=q1!=null?`<div class="club-hint">${q1.toLocaleString()}+ yds</div>`:'';
+    return `<button class="club-btn${tutClub===c.club?' selected':''}" ${locked?'disabled':''} onclick="selectTutClub('${c.club}')">
+      <div class="club-info">
+        <div class="club-name">${esc(c.club)}</div>
+        <div class="club-stat">${esc(statLabel)}</div>
+        ${hintHtml}
+      </div>
+      ${isDriver&&tutStrokes===0?'<span class="club-badge">TEE</span>':''}
+      ${isDriverUsed?'<span class="club-badge">USED</span>':''}
+    </button>`;
+  }).join('');
+}
+
+function selectTutClub(clubName) {
+  if (tutPopupOpen) return;
+  tutClub=clubName; tutPlayer=null; tutSeason=null; tutSeasonVal=null;
+  const clubDef  = TUT_CLUBS.find(c=>c.club===clubName);
+  const category = clubDef ? clubDef.stat_category : 'nba_points_per_game';
+  document.getElementById('tut-shot-label').textContent=clubName;
+  document.getElementById('tut-shot-card').style.display='';
+  if (tutStrokes===0 && clubName==='Driver') {
+    document.getElementById('tut-prefilled').style.display='flex';
+    document.getElementById('tut-free').style.display='none';
+  } else {
+    document.getElementById('tut-prefilled').style.display='none';
+    document.getElementById('tut-free').style.display='';
+    const search=document.getElementById('tut-search');
+    search.value=''; search.disabled=false;
+    search.dataset.category=category;
+    document.getElementById('tut-dropdown').classList.remove('open');
+    document.getElementById('tut-season').classList.remove('show');
+    document.getElementById('tut-preview').classList.remove('show');
+    document.getElementById('tut-swing-free').disabled=true;
+  }
+  renderTutClubBag();
+}
+
+async function tutSwing1() {
+  document.getElementById('tut-swing-1').disabled=true;
+  const dist=5477; // Peyton Manning 2013 NFL passing yards
+
+  const overlay=document.getElementById('shot-reveal-overlay');
+  document.getElementById('rev-player').textContent='Peyton Manning';
+  document.getElementById('rev-season-cat').textContent='2013 · Passing Yards (NFL)';
+  const rd=document.getElementById('rev-dist');
+  rd.textContent='?'; rd.className='rem-big';
+  overlay.classList.add('active');
+  await new Promise(r=>setTimeout(r,600));
+  await new Promise(resolve=>{
+    let start=null;
+    function step(ts){
+      if(!start) start=ts;
+      const p=Math.min((ts-start)/500,1);
+      rd.textContent=Math.round(dist*p).toLocaleString();
+      if(p<1) requestAnimationFrame(step);
+      else { rd.textContent=dist.toLocaleString(); resolve(); }
+    }
+    requestAnimationFrame(step);
+  });
+  rd.classList.add('flash-green');
+  await new Promise(r=>setTimeout(r,380));
+  overlay.classList.remove('active');
+
+  tutStrokes=1;
+  tutRunningTotal=dist;
+  tutRemaining=Math.abs(TUT_TARGET-tutRunningTotal);
+  tutShots.push({club:'Driver',player:'Peyton Manning',season:2013,distance:dist});
+  updateTutDisplay();
+  renderTutClubBag();
+  document.getElementById('tut-shot-card').style.display='none';
+  tutClub=null;
+
+  if (tutRemaining<=10) { completeTutorial(); return; }
+
+  showTutPopup(
+    'The Driver Is Spent',
+    `Manning carried you 5,477 yards — <strong style="color:var(--gold)">${tutRemaining.toLocaleString()} yards</strong> left. The Driver can only be used once per hole.<br><br>Switch to the <strong style="color:var(--text-primary)">5-Iron</strong>, which uses <strong style="color:var(--text-primary)">MLB Home Runs</strong>. Barry Bonds is loaded for you — pick a season. His 2001 season (73 HR, the all-time record) covers 73 yards. Other seasons cover less.`,
+    'Pick a Season',
+    tutStartPhase2
+  );
+}
+
+async function tutStartPhase2() {
+  selectTutClub('5-Iron');
+  const search=document.getElementById('tut-search');
+  search.value='Barry Bonds';
+  search.disabled=true;
+  tutPlayer={id:'bondsba01',name:'Barry Bonds'};
+  document.getElementById('tut-dropdown').classList.remove('open');
+  try {
+    const res=await fetch('/api/statgolf/seasons?player_id=bondsba01&category=mlb_home_runs');
+    const data=await res.json();
+    const seasons=data.seasons||[];
+    const sel=document.getElementById('tut-season');
+    sel.innerHTML='<option value="">Pick a season</option>'+
+      seasons.map(s=>`<option value="${s.season_year}" data-value="${s.value}">${s.season_year===9999?'Career Total':s.season_year}</option>`).join('');
+    if (seasons.length) {
+      sel.classList.add('show');
+    } else {
+      // Fallback: unlock free search if Bonds isn't in DB
+      search.disabled=false; search.value='';
+      tutPlayer=null;
+    }
+  } catch(e) {
+    search.disabled=false; search.value=''; tutPlayer=null;
+  }
+  tutSeason=null; tutSeasonVal=null;
+  document.getElementById('tut-preview').classList.remove('show');
+  document.getElementById('tut-swing-free').disabled=true;
+}
+
+function tutStartPhase3() {
+  selectTutClub('Putter');
+  const search=document.getElementById('tut-search');
+  search.disabled=false;
+  search.value='';
+  tutPlayer=null; tutSeason=null; tutSeasonVal=null;
+  document.getElementById('tut-season').classList.remove('show');
+  document.getElementById('tut-season').innerHTML='<option value="">Select season</option>';
+  document.getElementById('tut-preview').classList.remove('show');
+  document.getElementById('tut-swing-free').disabled=true;
+  setTimeout(()=>search.focus(),80);
+}
+
+function updateTutDisplay() {
+  document.getElementById('tut-strokes').textContent=tutStrokes;
+  document.getElementById('tut-rem-strip').textContent=tutRemaining;
+  const rb=document.getElementById('tut-rem-big');
+  rb.textContent=tutRemaining;
+  rb.classList.remove('pulse'); void rb.offsetWidth; rb.classList.add('pulse');
+  setTimeout(()=>rb.classList.remove('pulse'),560);
+  const wrap=document.getElementById('tut-hist-wrap');
+  wrap.style.display='';
+  document.getElementById('tut-hist-list').innerHTML=tutShots.map((s,i)=>
+    `<li>
+      <span class="sl-num">${i+1}</span>
+      <span class="sl-club">${esc(s.club)}</span>
+      <span class="sl-player">${esc(s.player)} ${s.season===9999?'(Career)':'('+s.season+')'}</span>
+      <span class="sl-dist">${s.distance} yds</span>
+    </li>`
+  ).join('');
+}
+
+function onTutSearch() {
+  const q=document.getElementById('tut-search').value.trim();
+  const cat=document.getElementById('tut-search').dataset.category||'nba_points_per_game';
+  clearTimeout(tutAcTimer); tutAcResults=[]; tutAcFocused=-1;
+  if(q.length<2){document.getElementById('tut-dropdown').classList.remove('open');return;}
+  tutAcTimer=setTimeout(async()=>{
+    try{
+      const res=await fetch(`/api/statgolf/autocomplete?category=${encodeURIComponent(cat)}&q=${encodeURIComponent(q)}`);
+      const d=await res.json(); tutAcResults=d.players||[]; tutAcFocused=-1; renderTutDropdown();
+    }catch(e){}
+  },180);
+}
+function renderTutDropdown() {
+  const dd=document.getElementById('tut-dropdown');
+  if(!tutAcResults.length){dd.classList.remove('open');return;}
+  dd.innerHTML=tutAcResults.map((p,i)=>
+    `<div class="ac-item${i===tutAcFocused?' focused':''}" onclick="chooseTutPlayer(${i})">
+      ${esc(p.player_name)}<span class="ac-sport">${p.sport.toUpperCase()}</span>
+    </div>`
+  ).join('');
+  dd.classList.add('open');
+}
+function onTutKeydown(e) {
+  const dd=document.getElementById('tut-dropdown');
+  if(!dd.classList.contains('open')) return;
+  if(e.key==='ArrowDown'){tutAcFocused=Math.min(tutAcFocused+1,tutAcResults.length-1);renderTutDropdown();e.preventDefault();}
+  if(e.key==='ArrowUp')  {tutAcFocused=Math.max(tutAcFocused-1,0);renderTutDropdown();e.preventDefault();}
+  if(e.key==='Enter'&&tutAcFocused>=0){chooseTutPlayer(tutAcFocused);e.preventDefault();}
+  if(e.key==='Escape'){dd.classList.remove('open');}
+}
+async function chooseTutPlayer(i) {
+  const p=tutAcResults[i]; if(!p) return;
+  tutPlayer={id:p.player_id,name:p.player_name};
+  document.getElementById('tut-search').value=p.player_name;
+  document.getElementById('tut-dropdown').classList.remove('open');
+  const cat=document.getElementById('tut-search').dataset.category||'nba_points_per_game';
+  const res=await fetch(`/api/statgolf/seasons?player_id=${encodeURIComponent(p.player_id)}&category=${encodeURIComponent(cat)}`);
+  const d=await res.json();
+  const sel=document.getElementById('tut-season');
+  sel.innerHTML='<option value="">Select season</option>'+(d.seasons||[]).map(s=>
+    `<option value="${s.season_year}" data-value="${s.value}">${s.season_year===9999?'Career Total':s.season_year}</option>`
+  ).join('');
+  sel.classList.add('show');
+  tutSeason=null; tutSeasonVal=null;
+  document.getElementById('tut-preview').classList.remove('show');
+  document.getElementById('tut-swing-free').disabled=true;
+}
+function onTutSeason() {
+  const sel=document.getElementById('tut-season'), opt=sel.options[sel.selectedIndex];
+  if(!sel.value){document.getElementById('tut-preview').classList.remove('show');document.getElementById('tut-swing-free').disabled=true;return;}
+  tutSeason=parseInt(sel.value,10); tutSeasonVal=parseFloat(opt.dataset.value);
+  document.getElementById('tut-p-name').textContent=tutPlayer?.name||'';
+  document.getElementById('tut-p-season').textContent=tutSeason===9999?'Career Total':`${tutSeason} season`;
+  document.getElementById('tut-preview').classList.add('show');
+  document.getElementById('tut-swing-free').disabled=false;
+}
+async function tutSwingFree() {
+  if(!tutClub||!tutPlayer||!tutSeason) return;
+  document.getElementById('tut-swing-free').disabled=true;
+  const dist=Math.round(tutSeasonVal||0);
+  if(dist<=0){showToast('No stat value available');document.getElementById('tut-swing-free').disabled=false;return;}
+
+  const shotClub=tutClub;
+  const clubDef=TUT_CLUBS.find(c=>c.club===shotClub);
+  const catLabel=clubDef?formatCatLabel(clubDef.stat_category):'Stat';
+
+  const overlay=document.getElementById('shot-reveal-overlay');
+  document.getElementById('rev-player').textContent=tutPlayer.name;
+  document.getElementById('rev-season-cat').textContent=`${tutSeason===9999?'Career':tutSeason} · ${catLabel}`;
+  const rd=document.getElementById('rev-dist');
+  rd.textContent='?'; rd.className='rem-big';
+  overlay.classList.add('active');
+  await new Promise(r=>setTimeout(r,600));
+  await new Promise(resolve=>{
+    let start=null;
+    function step(ts){
+      if(!start) start=ts;
+      const p=Math.min((ts-start)/500,1);
+      rd.textContent=Math.round(dist*p);
+      if(p<1) requestAnimationFrame(step);
+      else { rd.textContent=dist; resolve(); }
+    }
+    requestAnimationFrame(step);
+  });
+  // Mirror the backend overshoot mechanic
+  const wasOvershot=tutRunningTotal>TUT_TARGET;
+  if (wasOvershot) tutRunningTotal=Math.max(0,tutRunningTotal-dist);
+  else             tutRunningTotal+=dist;
+  const newRemaining=Math.abs(TUT_TARGET-tutRunningTotal);
+  rd.classList.add(newRemaining<=20?'flash-green':newRemaining<=40?'flash-amber':'flash-red');
+  await new Promise(r=>setTimeout(r,380));
+  overlay.classList.remove('active');
+
+  tutStrokes++;
+  tutRemaining=newRemaining;
+  tutShots.push({club:shotClub,player:tutPlayer.name,season:tutSeason,distance:dist});
+  updateTutDisplay();
+  renderTutClubBag();
+  document.getElementById('tut-shot-card').style.display='none';
+  tutClub=null;
+
+  if (tutRemaining<=10||tutStrokes>=3) { completeTutorial(); return; }
+
+  // After phase 2 (5-Iron) → show popup introducing the free Putter shot
+  if (tutStrokes===2) {
+    showTutPopup(
+      'One Shot Left',
+      `<strong style="color:var(--gold)">${tutRemaining.toLocaleString()} yards</strong> to the pin. The Putter uses <strong style="color:var(--text-primary)">NBA Points Per Game</strong> — search any player, pick any season. The higher their scoring average, the farther you travel.<br><br>Hint: search <strong style="color:var(--text-primary)">Wilt</strong> — Wilt Chamberlain averaged 50.4 PPG in 1962, the highest single-season average in NBA history.`,
+      'Find My Player',
+      tutStartPhase3
+    );
+  }
+}
+function completeTutorial() {
+  document.getElementById('tut-hole').style.display='none';
+  showTutPopup(
+    "You've Got It!",
+    'That\'s the whole game. A fresh 3-hole course drops every morning.<br><br>Out there you\'ll see NFL, NBA, MLB, and NHL stats across dozens of categories — career totals, season bests, per-game averages. The more sports history you can pull from, the lower you\'ll score.',
+    "Play Today's Round",
+    finishTutorial
+  );
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+loadSession();
+updateHeaderAuth();
+(async () => {
+  // Refresh is_admin from server (localStorage may be stale)
+  if (currentUser && authToken) {
+    try {
+      const me = await api('GET', '/api/me', null);
+      if (me.user) {
+        currentUser = {...currentUser, is_admin: me.user.is_admin};
+        try { localStorage.setItem('statgolf_user', JSON.stringify(currentUser)); } catch(x){}
+        updateHeaderAuth();
+      }
+    } catch(x){}
+  }
+  // Load Q1 stat hints for club bag display
+  try {
+    const h = await fetch('/api/statgolf/hints').then(r=>r.json());
+    catHints = h.hints || {};
+  } catch(x){}
+  // Route first-time users to the interactive tutorial
+  try {
+    if (!localStorage.getItem('statgolf_tutorial_done')) {
+      showScreen('screen-tutorial');
+      return;
+    }
+  } catch(x){}
+  await loadLobby();
+})();
+</script>
+</body>
+</html>

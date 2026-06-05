@@ -1,0 +1,9 @@
+flask==3.1.0
+werkzeug>=3.0.0
+python-dotenv>=1.0.1
+gunicorn==23.0.0
+rapidfuzz==3.9.7
+requests==2.32.3
+beautifulsoup4==4.12.3
+lxml>=5.0.0
+cloudscraper>=1.2.71

@@ -1,0 +1,45 @@
+# Secrets — never commit
+.env
+
+# Claude Code local config
+.claude/
+
+# Database — upload to the server once via SCP; it grows independently there
+*.db
+*.bak
+*.predupe-*
+statgolf.db.*
+
+# Separate NBA betting project (belongs in its own repo)
+nba_*.py
+nba_cache/
+nba_tracking/
+nba_*.json
+
+# Scraper page cache
+sg_cache/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+
+# Scratch / debug
+agg_result.txt
+templates/*.bak-*
+dump_*.html
+dump_*.json
+debug_*.py
+test_*.py
+check_*.py
+
+# Loose images/screenshots in the project root (keep committed static assets)
+*.png
+*.jpg
+*.jpeg
+!static/*.png
+!static/*.jpg
