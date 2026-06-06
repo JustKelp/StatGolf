@@ -1,12 +1,13 @@
 {
-  "_comment": "StatGolf end-of-round scorecard overlay. Background is static/scorecard.png (2200x537). These are the CELL-CENTER coordinates where each value is stamped (drawn centered). cols = column centers (label / hole1-3 / TOT / rarity); rows = row centers (date / distance / par / score / sub). Edit to match your design; changes apply on page refresh.",
-  "width": 2200,
-  "height": 537,
+  "_comment": "StatGolf scorecard overlay for static/scorecard.png (960x540). cols = column centers (label / hole1-3 / TOT / rarity); rows = row centers (date / distance / par / score / sub); dateX = x for the date in the green header. Values are drawn centered. Edit to match your design; changes apply on page refresh.",
+  "width": 960,
+  "height": 540,
   "ink": "#1a2a1e",
   "diffPos": "#C0392B",
   "diffNeg": "#1F6FB0",
-  "size": 34,
-  "totSize": 38,
-  "cols": { "label": 281, "h1": 639, "h2": 997, "h3": 1356, "tot": 1714, "rarity": 2022 },
-  "rows": { "date": 80, "dist": 245, "par": 322, "score": 400, "sub": 473 }
+  "size": 26,
+  "totSize": 28,
+  "dateX": 636,
+  "cols": { "label": 80, "h1": 240, "h2": 400, "h3": 560, "tot": 720, "rarity": 880 },
+  "rows": { "date": 44, "dist": 225, "par": 315, "score": 404, "sub": 493 }
 }

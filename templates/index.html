@@ -2308,7 +2308,7 @@ function _drawShareCard(cv,result){
   };
   const T=L.totSize, S=L.size;
 
-  put(C.tot, R.date, fmtCardDate(result.date), S, 600);               // date
+  put(L.dateX || C.tot, R.date, fmtCardDate(result.date), S, 600);    // date (header)
   const diffLabels={easy:'Amateur',hard:'Scratch'};
   put(C.label, R.dist, (diffLabels[result.difficulty]||result.difficulty||''), S, 600);   // difficulty label
   const name=(typeof currentUser!=='undefined' && currentUser && currentUser.username) ? currentUser.username : 'Guest';
