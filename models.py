@@ -227,6 +227,9 @@ REACH_TOP_N = 5
 # steals/blocks per game (reach ~3–5) that players don't know or use. Bigger, variable
 # stats (points per game, home runs, …) still let a low pick fine-tune near the pin.
 MIN_CLUB_REACH = 10
+# Max reach ratio between two consecutive clubs in the bag (Driver→3W→5I→9I→Putter).
+# Caps drastic jumps so each club can correct the one before it and the Putter stays useful.
+MAX_GAP_RATIO = 6
 
 def category_reach(con, stat_category, n=REACH_TOP_N):
     """Average of the top-n distinct players' best value in a category. 0 if no data.
@@ -386,6 +389,89 @@ def dedupe_duplicate_player_ids():
             merged += 1
     con.commit(); con.close()
     return merged, moved, deleted
+
+def _id_base_num(pid):
+    """Split a Sports-Reference id into (base, trailing-2-digit number) or (id, None)."""
+    return (pid[:-2], pid[-2:]) if len(pid) > 2 and pid[-2:].isdigit() else (pid, None)
+
+def _close_base(a, b):
+    """True if two id bases are case-equal, a prefix of the other, or edit-distance 1 —
+    i.e. a scraper typo/truncation/case-variant rather than a different name."""
+    a, b = a.lower(), b.lower()
+    if a == b or a.startswith(b) or b.startswith(a):
+        return True
+    if len(a) == len(b):
+        return sum(1 for x, y in zip(a, b) if x != y) <= 1
+    if abs(len(a) - len(b)) == 1:
+        s, l = (a, b) if len(a) < len(b) else (b, a)
+        return any(s == l[:i] + l[i + 1:] for i in range(len(l)))
+    return False
+
+def dedupe_id_variants():
+    """Merge player_id variants that are the SAME person via a scraper typo, identified by
+    a SHARED TRAILING NUMBER with a near-identical base (case/truncation/1-char), e.g.
+    'AlleMA00'/'AlleMa00', 'mutomdik01'/'mutomdi01', 'busedon01'/'busedo01'. These often
+    DON'T share an exact stat line (one holds an orphan stat with a slightly different value),
+    so dedupe_duplicate_player_ids misses them.
+
+    SAFETY: Sports-Reference disambiguates real namesakes with a DIFFERENT trailing number
+    (AlleMa00 vs AlleMa03 = two people), so requiring the SAME number means a base difference
+    can only be a scraper artifact for the same person. The id with the most rows wins; the
+    other's rows are reassigned or dropped on a key clash. Idempotent. Returns (merges, moved,
+    deleted)."""
+    con = sqlite3.connect(DB_PATH)
+    from collections import defaultdict
+    rows = con.execute(
+        "SELECT player_id, player_name, sport, COUNT(*) FROM sg_stat_values GROUP BY player_id"
+    ).fetchall()
+    groups = defaultdict(list)
+    rowcount = {}
+    name_of = {}
+    for pid, name, sport, c in rows:
+        groups[(_norm_name(name), sport)].append(pid)
+        rowcount[pid] = c
+        name_of[pid] = name
+
+    merges = moved = deleted = 0
+    for ids in groups.values():
+        if len(ids) < 2:
+            continue
+        parent = {i: i for i in ids}
+        def find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]; x = parent[x]
+            return x
+        for i in range(len(ids)):
+            for j in range(i + 1, len(ids)):
+                ba, na = _id_base_num(ids[i]); bb, nb = _id_base_num(ids[j])
+                if na is not None and na == nb and _close_base(ba, bb):
+                    parent[find(ids[i])] = find(ids[j])
+        clusters = defaultdict(list)
+        for i in ids:
+            clusters[find(i)].append(i)
+        for cluster in clusters.values():
+            if len(cluster) < 2:
+                continue
+            canon = max(cluster, key=lambda p: rowcount[p])
+            cname = name_of[canon]
+            canon_keys = set(con.execute(
+                "SELECT stat_category, season_year FROM sg_stat_values WHERE player_id=?", (canon,)
+            ).fetchall())
+            for dup in cluster:
+                if dup == canon:
+                    continue
+                for rowid, cat, yr in con.execute(
+                    "SELECT id, stat_category, season_year FROM sg_stat_values WHERE player_id=?", (dup,)
+                ).fetchall():
+                    if (cat, yr) in canon_keys:
+                        con.execute("DELETE FROM sg_stat_values WHERE id=?", (rowid,)); deleted += 1
+                    else:
+                        con.execute("UPDATE sg_stat_values SET player_id=?, player_name=? WHERE id=?",
+                                    (canon, cname, rowid)); moved += 1
+                        canon_keys.add((cat, yr))
+            merges += 1
+    con.commit(); con.close()
+    return merges, moved, deleted
 
 def get_stat(stat_category, player_id, season_year):
     """Returns (value, player_name) or (None, player_id_str) if not found."""
@@ -1080,30 +1166,40 @@ def generate_puzzle_candidates(driver_cats, n=5):
                 if len(below) < 4:
                     raise ValueError("driver too small for a full 5-club bag")
 
-                # Putter: the most useful short club — random among the 3 smallest eligible
-                # below the Driver (a recognizable, variable stat, never a tiny rate stat).
-                putter = random.choice(below[:3])
-                rest = [c for c in below if c != putter]            # ascending, >= 3 left
-
-                # 3-Wood: the primary approach that drives the optimal line — one of the two
-                # largest below the Driver (keeps maximum ladder room beneath it).
-                three = random.choice(rest[-2:])
-                mids = [c for c in rest if c != three]              # >= 2 left
-                rp, r1 = reach_of(putter), reach_of(three)
-
-                # 5-Iron / 9-Iron: two mid clubs, log-spaced between Putter and 3-Wood so the
-                # bag has a correction club at every scale between the pin and the tee.
-                if len(mids) >= 2 and r1 > rp > 0:
-                    t5 = rp * (r1 / rp) ** (2 / 3)
-                    t9 = rp * (r1 / rp) ** (1 / 3)
-                    five = min(mids, key=lambda c: abs(reach_of(c) - t5))
-                    nine = min([c for c in mids if c != five], key=lambda c: abs(reach_of(c) - t9))
-                else:
-                    five, nine = mids[-1], mids[0]
-
-                approaches = sorted({three, five, nine, putter}, key=reach_of, reverse=True)
+                # Build the 4 approach clubs (3-Wood → 5-Iron → 9-Iron → Putter) as a SMOOTH
+                # geometric descent: each ~0.45 of the previous (≈2.2x steps), always within
+                # MAX_GAP_RATIO. This keeps a correction club at every scale, so the Putter sits
+                # a sensible step below the 9-Iron and can actually finish — never stranded
+                # (e.g. a 9-Iron of 140 with a Putter of 13 and nothing between).
+                three = random.choice(
+                    [c for _, c in sorted(((reach_of(x), x) for x in below), reverse=True)[:2]])
+                used = {driver_cat, three}
+                approaches = [three]
+                prev = reach_of(three)
+                for _slot in range(3):                       # 5-Iron, 9-Iron, Putter
+                    lo = max(MIN_CLUB_REACH, prev / MAX_GAP_RATIO)   # never below the tiny-stat floor
+                    band = [c for c, info in by_reach
+                            if c not in used and lo <= info["reach"] < prev]
+                    if not band:                             # relax: any eligible club <= prev
+                        band = [c for c, info in by_reach     # (allow a tie when the floor is sparse)
+                                if c not in used and MIN_CLUB_REACH <= info["reach"] <= prev]
+                    if not band:                             # last resort: any unused eligible club
+                        band = [c for c, info in by_reach     # (floor-sparse drivers, e.g. HR/PPG)
+                                if c not in used and info["reach"] >= MIN_CLUB_REACH]
+                    if not band:
+                        raise ValueError("could not extend the club ladder")
+                    target = prev * 0.45
+                    nxt = min(band, key=lambda c: abs(reach_of(c) - target))
+                    approaches.append(nxt); used.add(nxt); prev = reach_of(nxt)
+                approaches = sorted(approaches, key=reach_of, reverse=True)   # descending order
                 if len(approaches) < 4:
                     raise ValueError("could not build a full 5-club bag")
+
+                # Reject if the relax step left a drastic jump anywhere in the approach ladder.
+                lad = [reach_of(a) for a in approaches]      # descending
+                if any(lad[i] > lad[i + 1] * MAX_GAP_RATIO for i in range(len(lad) - 1)):
+                    raise ValueError("club gap too large")
+
                 r1 = reach_of(approaches[0])     # biggest approach drives the optimal line
 
                 # ── Target (distance-first): Driver + A whole 3-Wood shots + a finish ──
