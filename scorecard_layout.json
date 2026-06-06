@@ -1,26 +1,12 @@
 {
-  "_comment": "StatGolf end-of-round scorecard overlay. The card image is static/scorecard.png; these are the CELL-CENTER coordinates where the round's numbers get stamped on it (canvas is width x height px, default 1080x1080). Each value is drawn CENTERED on its coordinate. Edit this file to match your scorecard design \u2014 changes apply on the next page refresh (no restart needed).",
-  "width": 1080,
-  "height": 1080,
-  "ink": "#243B2C",
+  "_comment": "StatGolf end-of-round scorecard overlay. Background is static/scorecard.png (2200x537). These are the CELL-CENTER coordinates where each value is stamped (drawn centered). cols = column centers (label / hole1-3 / TOT / rarity); rows = row centers (date / distance / par / score / sub). Edit to match your design; changes apply on page refresh.",
+  "width": 2200,
+  "height": 537,
+  "ink": "#1a2a1e",
   "diffPos": "#C0392B",
   "diffNeg": "#1F6FB0",
-  "date": {
-    "show": true,
-    "x": 990,
-    "y": 150,
-    "align": "right",
-    "size": 34
-  },
-  "grid": {
-    "firstColCenterX": 439,
-    "colStep": 157.5,
-    "size": 34,
-    "rows": {
-      "distance": 429,
-      "par": 515,
-      "score": 601,
-      "diff": 687
-    }
-  }
+  "size": 34,
+  "totSize": 38,
+  "cols": { "label": 281, "h1": 639, "h2": 997, "h3": 1356, "tot": 1714, "rarity": 2022 },
+  "rows": { "date": 80, "dist": 245, "par": 322, "score": 400, "sub": 473 }
 }

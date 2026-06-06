@@ -13,11 +13,11 @@ load_dotenv()
 # Scorecard number-overlay layout lives in a root file you can edit (see scorecard_layout.json).
 _CARD_LAYOUT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scorecard_layout.json")
 _CARD_LAYOUT_DEFAULT = {
-    "width": 1080, "height": 1080,
-    "ink": "#243B2C", "diffPos": "#C0392B", "diffNeg": "#1F6FB0",
-    "date": {"show": True, "x": 990, "y": 150, "align": "right", "size": 34},
-    "grid": {"firstColCenterX": 439, "colStep": 157.5, "size": 34,
-             "rows": {"distance": 429, "par": 515, "score": 601, "diff": 687}},
+    "width": 2200, "height": 537,
+    "ink": "#1a2a1e", "diffPos": "#C0392B", "diffNeg": "#1F6FB0",
+    "size": 34, "totSize": 38,
+    "cols": {"label": 281, "h1": 639, "h2": 997, "h3": 1356, "tot": 1714, "rarity": 2022},
+    "rows": {"date": 80, "dist": 245, "par": 322, "score": 400, "sub": 473},
 }
 
 def _load_card_layout():

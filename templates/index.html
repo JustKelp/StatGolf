@@ -2287,46 +2287,46 @@ function renderShareCard(result, canvasId='share-card-canvas'){
   if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(draw); } else { draw(); }
 }
 function _drawShareCard(cv,result){
-  const L=CARD_LAYOUT;
+  const L=CARD_LAYOUT, C=L.cols, R=L.rows;
   cv.width=L.width; cv.height=L.height;
   const ctx=cv.getContext('2d');
   ctx.clearRect(0,0,L.width,L.height);
   if(_cardBgReady) ctx.drawImage(_cardBg,0,0,L.width,L.height);   // your scorecard.png
 
   const holes=result.holes||[];
+  const colKey=['h1','h2','h3'];
   const sgn=n=> n>0?('+'+n):String(n);
+  const totDist = holes.reduce((a,h)=>a+(h.target_distance||0),0);
   const totPar  = holes.reduce((a,h)=>a+h.par,0);
   const totStr  = holes.reduce((a,h)=>a+h.strokes,0);
   const totDiff = totStr-totPar;
-  ctx.textBaseline='middle';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const put=(x,y,s,sz,weight,color)=>{
+    ctx.fillStyle=color||L.ink;
+    ctx.font=(weight||500)+' '+(sz||L.size)+'px Oswald, Arial, sans-serif';
+    ctx.fillText(s, x, y);
+  };
+  const T=L.totSize, S=L.size;
 
-  // ── date ──
-  if(L.date.show){
-    ctx.fillStyle=L.ink; ctx.textAlign=L.date.align||'right';
-    ctx.font='600 '+L.date.size+'px Oswald, Arial, sans-serif';
-    ctx.fillText(fmtCardDate(result.date), L.date.x, L.date.y);
-  }
+  put(C.tot, R.date, fmtCardDate(result.date), S, 600);               // date
+  const diffLabels={easy:'Amateur',hard:'Scratch'};
+  put(C.label, R.dist, (diffLabels[result.difficulty]||result.difficulty||''), S, 600);   // difficulty label
+  const name=(typeof currentUser!=='undefined' && currentUser && currentUser.username) ? currentUser.username : 'Guest';
+  put(C.label, R.score, name, S, 600);                               // profile name label
 
-  // ── the round's numbers, stamped into the grid cells ──
-  const g=L.grid;
-  const colCX=i=> g.firstColCenterX + i*g.colStep;
-  ctx.textAlign='center';
   holes.forEach((h,i)=>{
-    const x=colCX(i);
-    ctx.fillStyle=L.ink; ctx.font='500 '+g.size+'px "Source Sans 3", Arial, sans-serif';
-    if(h.target_distance) ctx.fillText(Number(h.target_distance).toLocaleString(), x, g.rows.distance);
-    ctx.fillText(String(h.par),     x, g.rows.par);
-    ctx.fillText(String(h.strokes), x, g.rows.score);
-    ctx.fillStyle = h.par_diff>0?L.diffPos:h.par_diff<0?L.diffNeg:L.ink;
-    ctx.fillText(sgn(h.par_diff),   x, g.rows.diff);
+    const x=C[colKey[i]];
+    put(x, R.dist,  h.target_distance?Number(h.target_distance).toLocaleString():'—', S, 500);
+    put(x, R.par,   String(h.par),     S, 500);
+    put(x, R.score, String(h.strokes), S, 500);
   });
-  // TOT column (immediately after the last hole)
-  const tx=colCX(holes.length);
-  ctx.fillStyle=L.ink; ctx.font='700 '+g.size+'px Oswald, Arial, sans-serif';
-  ctx.fillText(String(totPar), tx, g.rows.par);
-  ctx.fillText(String(totStr), tx, g.rows.score);
-  ctx.fillStyle = totDiff>0?L.diffPos:totDiff<0?L.diffNeg:L.ink;
-  ctx.fillText(sgn(totDiff), tx, g.rows.diff);
+  // TOT column
+  put(C.tot, R.dist,  totDist?totDist.toLocaleString():'—', T, 700);
+  put(C.tot, R.par,   String(totPar), T, 700);
+  put(C.tot, R.score, String(totStr), T, 700);
+  // sub row: total score-to-par, and rarity
+  put(C.tot,   R.sub, sgn(totDiff), T, 700, totDiff>0?L.diffPos:totDiff<0?L.diffNeg:L.ink);
+  put(C.rarity,R.sub, (result.rarity==null?'—':Math.round(result.rarity)+'%'), T, 700);
 }
 function fmtCardDate(s){ try{ const dt=new Date(s+'T00:00:00'); return dt.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}); }catch(e){ return s||''; } }
 
