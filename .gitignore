@@ -43,3 +43,6 @@ check_*.py
 *.jpeg
 !static/*.png
 !static/*.jpg
+
+# Local-only deploy notes (never commit — may contain IPs/keys)
+*.local.md
