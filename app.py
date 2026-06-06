@@ -255,9 +255,12 @@ def api_shot():
         state["running_total"] += distance
     state["strokes"] += 1
     remaining = abs(hole["target_distance"] - state["running_total"])
+    overshot_now = state["running_total"] > hole["target_distance"]
 
-    # Check hazards
-    hazard = models.check_hazards(remaining, hole["hazard_bands"])
+    # Check hazards — only on the approach side (ball short of the pin). Past the pin
+    # you're beyond the fairway hazards, so overshooting by N yards must NOT trigger a
+    # hazard that sits N yards short of the green.
+    hazard = None if overshot_now else models.check_hazards(remaining, hole["hazard_bands"])
     effect = None
 
     shot_record = {
