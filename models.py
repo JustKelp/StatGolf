@@ -35,6 +35,9 @@ def init_db():
     );
     CREATE INDEX IF NOT EXISTS idx_sg_stat_cat
         ON sg_stat_values(stat_category, player_name COLLATE NOCASE);
+    -- Speeds the per-player top-value reach queries (category_reach / generator / hints).
+    CREATE INDEX IF NOT EXISTS idx_sg_stat_val
+        ON sg_stat_values(stat_category, player_id, value);
 
     CREATE TABLE IF NOT EXISTS sg_puzzle (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -231,9 +234,27 @@ MIN_CLUB_REACH = 10
 # Caps drastic jumps so each club can correct the one before it and the Putter stays useful.
 MAX_GAP_RATIO = 6
 
+# Manual per-category reach/hint overrides (stat_overrides.json in the project root).
+# Editing that file lets you pin a category's reach/hint instead of the computed value;
+# it drives BOTH hole sizing and the on-club hint so they stay consistent. Loaded at
+# startup — edit the file and restart the app to apply.
+_STAT_OVERRIDES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stat_overrides.json")
+
+def _load_overrides():
+    try:
+        with open(_STAT_OVERRIDES_PATH, encoding="utf-8") as f:
+            return {k: float(v) for k, v in json.load(f).get("overrides", {}).items()}
+    except Exception:
+        return {}
+
+_OVERRIDES = _load_overrides()
+_HINTS_CACHE = None
+
 def category_reach(con, stat_category, n=REACH_TOP_N):
-    """Average of the top-n distinct players' best value in a category. 0 if no data.
-    Dedupes by player so one athlete's multiple elite seasons can't dominate."""
+    """Average of the top-n distinct players' best value in a category (deduped by player),
+    OR a manual override from stat_overrides.json if set. 0 if no data."""
+    if stat_category in _OVERRIDES:
+        return _OVERRIDES[stat_category]
     row = con.execute(
         "SELECT AVG(v) FROM ("
         "  SELECT MAX(value) AS v FROM sg_stat_values WHERE stat_category=?"
@@ -243,10 +264,12 @@ def category_reach(con, stat_category, n=REACH_TOP_N):
     return row[0] if row and row[0] else 0
 
 def get_category_hints():
-    """Returns {stat_category: hint_value} — the value a knowledgeable player should
-    aim a top pick at, shown on each club. Uses the same upper-echelon reach the hole
-    was sized to (see category_reach / REACH_TOP_N), rounded to 2 significant figures,
-    so the aim shown to the player matches how the target was actually built."""
+    """Returns {stat_category: hint_value} — the aim value shown on each club, = the same
+    reach the hole was sized to (category_reach, with any override), rounded to 2 sig figs.
+    Cached for the process lifetime (data changes require a restart anyway)."""
+    global _HINTS_CACHE
+    if _HINTS_CACHE is not None:
+        return _HINTS_CACHE
     con = sqlite3.connect(DB_PATH)
     cats = [r[0] for r in con.execute(
         "SELECT DISTINCT stat_category FROM sg_stat_values"
@@ -257,6 +280,7 @@ def get_category_hints():
         if reach:
             result[cat] = _round_sig(reach, 2)
     con.close()
+    _HINTS_CACHE = result
     return result
 
 def _norm_name(name):
@@ -934,49 +958,63 @@ def get_hole_difficulty_stats(puzzle_date):
     return [{"hole_number": r[0], "avg_diff": round(r[1], 2), "count": r[2]} for r in rows]
 
 def calculate_rarity(user_id, puzzle_date):
-    """
-    Average percentage of other completed players who chose the same athletes.
-    Lower = rarer picks = more bragging rights.
-    Returns None if fewer than 2 completed players.
-    """
+    """Lower = rarer picks = more bragging rights.
+
+    With real traffic (>= 5 finishers) it's the average % of OTHER finishers who made the
+    same pick. Below that — including solo play — it falls back to how obscure your picks are
+    in the overall data: the value-percentile of each picked player within its category
+    (picking the obvious record-holder is common/high; a deep cut is rare/low). This way the
+    score is meaningful from day one instead of showing nothing."""
+    PEER_MIN = 5
     con = sqlite3.connect(DB_PATH)
     try:
-        total = con.execute(
-            "SELECT COUNT(DISTINCT user_id) FROM sg_round WHERE puzzle_date=? AND completed=1",
-            (puzzle_date,)
-        ).fetchone()[0]
-        if total <= 1:
-            return None
-
         user_holes = con.execute(
             "SELECT shots FROM sg_hole_result WHERE user_id=? AND puzzle_date=?",
             (user_id, puzzle_date)
         ).fetchall()
         user_picks = set()
+        pick_values = []
         for (sj,) in user_holes:
             for shot in json.loads(sj):
                 user_picks.add((shot["player_id"], shot["stat_category"]))
+                pick_values.append((shot["stat_category"], shot.get("raw_value", 0)))
         if not user_picks:
             return None
 
-        # Build pick→user_ids map for all other completed players
-        other_results = con.execute(
-            """SELECT h.user_id, h.shots FROM sg_hole_result h
-               JOIN sg_round r ON r.user_id=h.user_id AND r.puzzle_date=h.puzzle_date
-               WHERE h.puzzle_date=? AND r.completed=1 AND h.user_id!=?""",
-            (puzzle_date, user_id)
-        ).fetchall()
-        pick_users = {}
-        for (uid, sj) in other_results:
-            for shot in json.loads(sj):
-                key = (shot["player_id"], shot["stat_category"])
-                pick_users.setdefault(key, set()).add(uid)
+        total = con.execute(
+            "SELECT COUNT(DISTINCT user_id) FROM sg_round WHERE puzzle_date=? AND completed=1",
+            (puzzle_date,)
+        ).fetchone()[0]
 
-        rarity_pcts = [
-            len(pick_users.get(pick, set())) / (total - 1) * 100
-            for pick in user_picks
-        ]
-        return round(sum(rarity_pcts) / len(rarity_pcts), 1)
+        if total >= PEER_MIN:
+            other_results = con.execute(
+                """SELECT h.user_id, h.shots FROM sg_hole_result h
+                   JOIN sg_round r ON r.user_id=h.user_id AND r.puzzle_date=h.puzzle_date
+                   WHERE h.puzzle_date=? AND r.completed=1 AND h.user_id!=?""",
+                (puzzle_date, user_id)
+            ).fetchall()
+            pick_users = {}
+            for (uid, sj) in other_results:
+                for shot in json.loads(sj):
+                    key = (shot["player_id"], shot["stat_category"])
+                    pick_users.setdefault(key, set()).add(uid)
+            pcts = [len(pick_users.get(p, set())) / (total - 1) * 100 for p in user_picks]
+            return round(sum(pcts) / len(pcts), 1)
+
+        # Population fallback — how deep each pick is in its category by value.
+        pcts = []
+        for cat, val in pick_values:
+            tp = con.execute(
+                "SELECT COUNT(DISTINCT player_id) FROM sg_stat_values WHERE stat_category=?", (cat,)
+            ).fetchone()[0]
+            if not tp:
+                continue
+            at_or_below = con.execute(
+                "SELECT COUNT(*) FROM (SELECT player_id, MAX(value) mv FROM sg_stat_values "
+                "WHERE stat_category=? GROUP BY player_id) WHERE mv <= ?", (cat, val)
+            ).fetchone()[0]
+            pcts.append(at_or_below / tp * 100)
+        return round(sum(pcts) / len(pcts), 1) if pcts else None
     finally:
         con.close()
 
@@ -1156,49 +1194,50 @@ def generate_puzzle_candidates(driver_cats, n=5):
                 if driver_cat not in cat_info:
                     raise ValueError(f"Category {driver_cat} not in database")
                 D = reach_of(driver_cat)
-                # Pool of categories smaller than the Driver — every approach club comes
-                # from here, so no club is ever bigger than the hole. Excludes tiny-reach
-                # stats (reach < MIN_CLUB_REACH, e.g. steals/blocks per game) which players
-                # don't engage with; the remaining stats have enough range that a low pick
-                # still fine-tunes near the pin (like points per game). Need 4 for a full bag.
-                below = [c for c, info in by_reach
-                         if MIN_CLUB_REACH <= info["reach"] < D and c != driver_cat]
-                if len(below) < 4:
-                    raise ValueError("driver too small for a full 5-club bag")
+                # Putter first: a small finishing club whose hint is under 120 (design rule),
+                # but not so tiny that the ladder down to it would need a drastic jump. The floor
+                # D / MAX_GAP_RATIO^4 keeps the 4-step descent within MAX_GAP_RATIO. Never a tiny
+                # rate stat (>= MIN_CLUB_REACH, so no steals/blocks per game).
+                pfloor = max(MIN_CLUB_REACH, D / (MAX_GAP_RATIO ** 4))
+                pcap = min(120.0, D)
+                putter_cands = [c for c, info in by_reach
+                                if c != driver_cat and pfloor <= info["reach"] < pcap]
+                if not putter_cands:                         # fallback: any eligible club under 120
+                    putter_cands = [c for c, info in by_reach
+                                    if c != driver_cat and MIN_CLUB_REACH <= info["reach"] < pcap]
+                if not putter_cands:
+                    raise ValueError("no putter under 120 available")
+                putter = random.choice(putter_cands)
+                rp = reach_of(putter)
+                used = {driver_cat, putter}
 
-                # Build the 4 approach clubs (3-Wood → 5-Iron → 9-Iron → Putter) as a SMOOTH
-                # geometric descent: each ~0.45 of the previous (≈2.2x steps), always within
-                # MAX_GAP_RATIO. This keeps a correction club at every scale, so the Putter sits
-                # a sensible step below the 9-Iron and can actually finish — never stranded
-                # (e.g. a 9-Iron of 140 with a Putter of 13 and nothing between).
-                three = random.choice(
-                    [c for _, c in sorted(((reach_of(x), x) for x in below), reverse=True)[:2]])
-                used = {driver_cat, three}
-                approaches = [three]
-                prev = reach_of(three)
-                for _slot in range(3):                       # 5-Iron, 9-Iron, Putter
-                    lo = max(MIN_CLUB_REACH, prev / MAX_GAP_RATIO)   # never below the tiny-stat floor
-                    band = [c for c, info in by_reach
-                            if c not in used and lo <= info["reach"] < prev]
-                    if not band:                             # relax: any eligible club <= prev
-                        band = [c for c, info in by_reach     # (allow a tie when the floor is sparse)
-                                if c not in used and MIN_CLUB_REACH <= info["reach"] <= prev]
-                    if not band:                             # last resort: any unused eligible club
-                        band = [c for c, info in by_reach     # (floor-sparse drivers, e.g. HR/PPG)
-                                if c not in used and info["reach"] >= MIN_CLUB_REACH]
-                    if not band:
-                        raise ValueError("could not extend the club ladder")
-                    target = prev * 0.45
-                    nxt = min(band, key=lambda c: abs(reach_of(c) - target))
-                    approaches.append(nxt); used.add(nxt); prev = reach_of(nxt)
-                approaches = sorted(approaches, key=reach_of, reverse=True)   # descending order
+                # 3-Wood / 5-Iron / 9-Iron: a smooth geometric ladder from the Driver down to the
+                # Putter — targets at rp*(D/rp)^(3/4, 2/4, 1/4) — each the nearest available club,
+                # so every club can correct the one before it (no drastic jumps).
+                ratio = (D / rp) if rp > 0 else 1
+                uppers = []
+                prev = D
+                for k in (3, 2, 1):
+                    target = rp * (ratio ** (k / 4.0))
+                    cands = [c for c, info in by_reach
+                             if c not in used and rp < info["reach"] < prev]
+                    if not cands:                            # relax: any unused eligible below prev
+                        cands = [c for c, info in by_reach
+                                 if c not in used and MIN_CLUB_REACH <= info["reach"] < prev]
+                    if not cands:
+                        raise ValueError("could not build the club ladder")
+                    nxt = min(cands, key=lambda c: abs(reach_of(c) - target))
+                    uppers.append(nxt); used.add(nxt); prev = reach_of(nxt)
+
+                approaches = sorted(uppers + [putter], key=reach_of, reverse=True)
                 if len(approaches) < 4:
                     raise ValueError("could not build a full 5-club bag")
 
-                # Reject if the relax step left a drastic jump anywhere in the approach ladder.
                 lad = [reach_of(a) for a in approaches]      # descending
                 if any(lad[i] > lad[i + 1] * MAX_GAP_RATIO for i in range(len(lad) - 1)):
-                    raise ValueError("club gap too large")
+                    raise ValueError("club gap too large")   # no drastic jumps
+                if lad[-1] >= 120:
+                    raise ValueError("putter hint >= 120")   # putter must finish small
 
                 r1 = reach_of(approaches[0])     # biggest approach drives the optimal line
 

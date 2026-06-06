@@ -1,0 +1,4 @@
+{
+  "_comment": "Pin a category's reach/hint here instead of the auto-computed top-5-player value. The number controls BOTH hole sizing and the on-club hint, so they stay consistent. Keys are the category ids from STAT_HINTS.md. Example: set home-run holes to aim at 70 with \"mlb_home_runs\": 70. Edit this file, then restart the app (locally; on the server: git pull && sudo systemctl restart statgolf). Categories not listed use the computed value.",
+  "overrides": {}
+}
