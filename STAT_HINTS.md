@@ -196,7 +196,7 @@ HINT=2000  REACH=3000 ELIGIBLE=Y  rows=21556
 
 ============================================================
 Career RBI (MLB)  \[mlb\_career\_rbi]
-HINT=1500 REACH= 2000  ELIGIBLE=Y  rows=7624
+HINT=1500 REACH=2000  ELIGIBLE=Y  rows=7624
 ---
 
 1. Henry Aaron                       2,297
@@ -212,7 +212,7 @@ HINT=1500 REACH= 2000  ELIGIBLE=Y  rows=7624
 
 ============================================================
 Rushing Yards (NFL)  \[nfl\_rushing\_yards]
-HINT= 1400  REACH=1850  ELIGIBLE=Y  rows=15260
+HINT=1400  REACH=1850  ELIGIBLE=Y  rows=15260
 ---
 
 1. Eric Dickerson                    2,105
@@ -244,7 +244,7 @@ HINT=1200  REACH=2000  ELIGIBLE=Y  rows=6612
 
 ============================================================
 Receiving Yards (NFL)  \[nfl\_receiving\_yards]
-HINT=1200  REACH= 1700  ELIGIBLE=Y  rows=22160
+HINT=1200  REACH=1700  ELIGIBLE=Y  rows=22160
 ---
 
 1. Calvin Johnson                    1,964
@@ -308,7 +308,7 @@ HINT=600  REACH=950  ELIGIBLE=Y  rows=21513
 
 ============================================================
 Career Goals (NHL)  \[nhl\_career\_goals]
-HINT= 400  REACH=700  ELIGIBLE=Y  rows=5892
+HINT=400  REACH=700  ELIGIBLE=Y  rows=5892
 ---
 
 1. Alex Ovechkin                       929
@@ -340,7 +340,7 @@ HINT=350  REACH=675  ELIGIBLE=Y  rows=6696
 
 ============================================================
 Career Saves (MLB)  \[mlb\_career\_saves]
-HINT=250  REACH= 400  ELIGIBLE=Y  rows=4625
+HINT=250  REACH=400  ELIGIBLE=Y  rows=4625
 ---
 
 1. Mariano Rivera                      647
@@ -452,7 +452,7 @@ HINT=75  REACH=170  ELIGIBLE=Y  rows=41618
 
 ============================================================
 Points (NHL)  \[nhl\_points]
-HINT=100  REACH= 160  ELIGIBLE=Y  rows=40672
+HINT=100  REACH=160  ELIGIBLE=Y  rows=40672
 ---
 
 1. Wayne Gretzky                       215
@@ -484,7 +484,7 @@ HINT=80  REACH=150  ELIGIBLE=Y  rows=5179
 
 ============================================================
 Career Touchdowns (NFL)  \[nfl\_career\_touchdowns]
-HINT= 90  REACH=135  ELIGIBLE=Y  rows=4412
+HINT=90  REACH=135  ELIGIBLE=Y  rows=4412
 ---
 
 1. Jerry Rice                          207
