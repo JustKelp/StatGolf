@@ -19,6 +19,7 @@
   --gold:           #C9A84C;
   --gold-light:     #E0C06A;
   --gold-dim:       rgba(201,168,76,0.4);
+  --rarity-purple:  #B388E8;
   --sand:           #D9B86A;
   --water:          #3E9EEF;
   --flag-red:       #E8253A;
@@ -761,7 +762,7 @@ input::placeholder { color: var(--text-dim); }
   background:var(--bg-mid); border:1px solid var(--border);
 }
 .rarity-num {
-  font-family:'Oswald',sans-serif; font-size:2rem; font-weight:700; color:var(--green-bright);
+  font-family:'Oswald',sans-serif; font-size:2rem; font-weight:700; color:var(--rarity-purple);
 }
 .rarity-label {
   font-family:'Source Sans 3',sans-serif; font-size:0.62rem;
@@ -812,7 +813,7 @@ input::placeholder { color: var(--text-dim); }
   display:flex; flex-direction:column; align-items:center; line-height:1;
 }
 .rev-rarity-num {
-  font-family:'Oswald',sans-serif; font-size:2.6rem; font-weight:700; color:var(--gold-light);
+  font-family:'Oswald',sans-serif; font-size:2.6rem; font-weight:700; color:var(--rarity-purple);
 }
 .rev-rarity-lbl {
   font-family:'Source Sans 3',sans-serif; font-size:0.6rem; font-weight:600;
@@ -2106,7 +2107,8 @@ async function confirmShot() {
   const target    = activeHole.target_distance;
   const pct       = finalDist / target;
   revDist.classList.add(pct >= 0.25 ? 'flash-green' : pct >= 0.08 ? 'flash-amber' : 'flash-red');
-  await new Promise(r => setTimeout(r, 380));
+  // Hold on the settled distance + rarity so the player can actually read them.
+  await new Promise(r => setTimeout(r, 1100));
 
   overlay.classList.remove('active');
   handleShotResponse(d);
