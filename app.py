@@ -273,6 +273,7 @@ def api_shot():
         "distance": distance,
         "debuff_applied": debuff_applied,
         "effect": None,
+        "rarity": models.player_rarity(player_id, stat_category, raw_value, int(season_year)),
     }
 
     if hazard:

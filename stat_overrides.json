@@ -1,4 +1,169 @@
 {
-  "_comment": "Pin a category's reach/hint here instead of the auto-computed top-5-player value. The number controls BOTH hole sizing and the on-club hint, so they stay consistent. Keys are the category ids from STAT_HINTS.md. Example: set home-run holes to aim at 70 with \"mlb_home_runs\": 70. Edit this file, then restart the app (locally; on the server: git pull && sudo systemctl restart statgolf). Categories not listed use the computed value.",
-  "overrides": {}
+  "_comment": "Pin a category hint/reach. \"hint\" = number shown on the club; \"reach\" = value used for hole sizing. They can differ. A bare number sets both. Edit + restart (server: git pull && sudo systemctl restart statgolf).",
+  "overrides": {
+    "nfl_career_passing_yards": {
+      "hint": 50000,
+      "reach": 70000
+    },
+    "nba_career_points": {
+      "hint": 25000,
+      "reach": 33500
+    },
+    "nba_career_rebounds": {
+      "hint": 12000,
+      "reach": 17000
+    },
+    "nfl_career_receiving_yards": {
+      "hint": 12000,
+      "reach": 14000
+    },
+    "nfl_career_rushing_yards": {
+      "hint": 10000,
+      "reach": 15000
+    },
+    "nba_career_assists": {
+      "hint": 8000,
+      "reach": 11500
+    },
+    "nfl_passing_yards": {
+      "hint": 4000,
+      "reach": 5000
+    },
+    "mlb_career_strikeouts_pitching": {
+      "hint": 2500,
+      "reach": 3500
+    },
+    "mlb_career_hits": {
+      "hint": 2500,
+      "reach": 3500
+    },
+    "nba_career_3pointers": {
+      "hint": 1750,
+      "reach": 3000
+    },
+    "career_games_played": {
+      "hint": 2000,
+      "reach": 3000
+    },
+    "nba_total_points": {
+      "hint": 2000,
+      "reach": 3000
+    },
+    "nhl_career_points": {
+      "hint": 1200,
+      "reach": 2000
+    },
+    "nba_total_rebounds": {
+      "hint": 1000,
+      "reach": 1600
+    },
+    "nhl_career_assists": {
+      "hint": 800,
+      "reach": 1100
+    },
+    "nba_total_assists": {
+      "hint": 600,
+      "reach": 950
+    },
+    "mlb_career_home_runs": {
+      "hint": 350,
+      "reach": 675
+    },
+    "nhl_penalty_minutes": {
+      "hint": 200,
+      "reach": 370
+    },
+    "mlb_strikeouts_pitching": {
+      "hint": 200,
+      "reach": 350
+    },
+    "nba_3pointers_made": {
+      "hint": 200,
+      "reach": 315
+    },
+    "mlb_ops_plus": {
+      "hint": 180,
+      "reach": 235
+    },
+    "mlb_hits": {
+      "hint": 150,
+      "reach": 250
+    },
+    "mlb_rbi": {
+      "hint": 75,
+      "reach": 170
+    },
+    "nfl_career_sacks": {
+      "hint": 80,
+      "reach": 150
+    },
+    "nfl_receptions": {
+      "hint": 100,
+      "reach": 135
+    },
+    "nhl_assists": {
+      "hint": 60,
+      "reach": 100
+    },
+    "mlb_stolen_bases": {
+      "hint": 60,
+      "reach": 105
+    },
+    "nhl_goals": {
+      "hint": 40,
+      "reach": 80
+    },
+    "mlb_home_runs": {
+      "hint": 35,
+      "reach": 60
+    },
+    "mlb_saves": {
+      "hint": 30,
+      "reach": 50
+    },
+    "nfl_passing_touchdowns": {
+      "hint": 35,
+      "reach": 48
+    },
+    "nba_points_per_game": {
+      "hint": 25,
+      "reach": 40
+    },
+    "mlb_wins_pitching": {
+      "hint": 20,
+      "reach": 35
+    },
+    "nfl_rushing_touchdowns": {
+      "hint": 13,
+      "reach": 22
+    },
+    "nba_rebounds_per_game": {
+      "hint": 15,
+      "reach": 20
+    },
+    "nfl_sacks": {
+      "hint": 14,
+      "reach": 22
+    },
+    "nfl_receiving_touchdowns": {
+      "hint": 12,
+      "reach": 28
+    },
+    "nba_assists_per_game": {
+      "hint": 8,
+      "reach": 13
+    },
+    "nfl_interceptions": {
+      "hint": 7,
+      "reach": 11
+    },
+    "nba_blocks_per_game": {
+      "hint": 2,
+      "reach": 3
+    },
+    "nba_steals_per_game": {
+      "hint": 2,
+      "reach": 4
+    }
+  }
 }

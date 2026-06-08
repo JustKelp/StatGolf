@@ -235,26 +235,41 @@ MIN_CLUB_REACH = 10
 MAX_GAP_RATIO = 6
 
 # Manual per-category reach/hint overrides (stat_overrides.json in the project root).
-# Editing that file lets you pin a category's reach/hint instead of the computed value;
-# it drives BOTH hole sizing and the on-club hint so they stay consistent. Loaded at
-# startup — edit the file and restart the app to apply.
+# Each entry pins a category's "reach" (hole sizing) and/or "hint" (the number shown on the
+# club) instead of the computed value — they can differ. Accepts either a bare number (used
+# as both) or an object {"hint": X, "reach": Y}. Loaded at startup; edit + restart to apply.
 _STAT_OVERRIDES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stat_overrides.json")
 
+def _f(x):
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
 def _load_overrides():
+    out = {}
     try:
         with open(_STAT_OVERRIDES_PATH, encoding="utf-8") as f:
-            return {k: float(v) for k, v in json.load(f).get("overrides", {}).items()}
+            raw = json.load(f).get("overrides", {})
+        for k, v in raw.items():
+            if isinstance(v, dict):
+                out[k] = {"hint": _f(v.get("hint")), "reach": _f(v.get("reach"))}
+            else:
+                r = _f(v)
+                out[k] = {"hint": r, "reach": r}
     except Exception:
-        return {}
+        pass
+    return out
 
 _OVERRIDES = _load_overrides()
 _HINTS_CACHE = None
 
 def category_reach(con, stat_category, n=REACH_TOP_N):
     """Average of the top-n distinct players' best value in a category (deduped by player),
-    OR a manual override from stat_overrides.json if set. 0 if no data."""
-    if stat_category in _OVERRIDES:
-        return _OVERRIDES[stat_category]
+    OR the reach override from stat_overrides.json if set. 0 if no data."""
+    ov = _OVERRIDES.get(stat_category)
+    if ov and ov.get("reach") is not None:
+        return ov["reach"]
     row = con.execute(
         "SELECT AVG(v) FROM ("
         "  SELECT MAX(value) AS v FROM sg_stat_values WHERE stat_category=?"
@@ -276,6 +291,10 @@ def get_category_hints():
     ).fetchall()]
     result = {}
     for cat in cats:
+        ov = _OVERRIDES.get(cat)
+        if ov and ov.get("hint") is not None:    # explicit hint override
+            result[cat] = ov["hint"]
+            continue
         reach = category_reach(con, cat)
         if reach:
             result[cat] = _round_sig(reach, 2)
@@ -851,7 +870,7 @@ def share_string(puzzle_date, hole_results, rarity=None):
         f"{label.upper()}  ({diff_str})",
     ]
     if rarity is not None:
-        lines.append(f"Rarity: {round(rarity)}%")
+        lines.append(f"Rarity: {rarity}")
     lines += ["", "statgolf.com"]
     return "\n".join(lines)
 
@@ -957,64 +976,103 @@ def get_hole_difficulty_stats(puzzle_date):
     con.close()
     return [{"hole_number": r[0], "avg_diff": round(r[1], 2), "count": r[2]} for r in rows]
 
-def calculate_rarity(user_id, puzzle_date):
-    """Lower = rarer picks = more bragging rights.
+# ── RARITY ──────────────────────────────────────────────────────────────────────
+# A pick's rarity is a 0–1 "commonness" score (lower = rarer = more impressive, the same
+# convention StatCheck and Immaculate Grid use). It's a weighted blend of four signals,
+# each normalized so 1.0 = the most common/obvious kind of pick:
+#   usage   50% — how often this player is actually picked across StatGolf rounds (the real
+#                 Immaculate-Grid signal: famous picks are common). Grows as the game is played.
+#   recency 20% — recent season/player is common; old seasons are deeper snipes (rewarded).
+#   games   20% — more career games = more established/known = more likely to be guessed.
+#   stats   10% — record-tier value is the obvious pick; a deep cut is rarer. (Least important.)
+RARITY_WEIGHTS = {"usage": 0.50, "recency": 0.20, "games": 0.20, "stats": 0.10}
 
-    With real traffic (>= 5 finishers) it's the average % of OTHER finishers who made the
-    same pick. Below that — including solo play — it falls back to how obscure your picks are
-    in the overall data: the value-percentile of each picked player within its category
-    (picking the obvious record-holder is common/high; a deep cut is rare/low). This way the
-    score is meaningful from day one instead of showing nothing."""
-    PEER_MIN = 5
+def _rarity_recency(season_year):
+    """0–1: recent (or career/all-time) = high (common); older seasons decay toward 0.10."""
+    try:
+        yr = int(season_year)
+    except (TypeError, ValueError):
+        return 0.6
+    if yr == 9999:           # career/all-time picks are widely known
+        return 0.80
+    years_ago = max(0, date.today().year - yr)
+    return max(0.10, 1.0 - (min(years_ago, 80) / 80.0) ** 0.6)
+
+def _rarity_usage_map(con):
+    """{player_id: times picked across all completed rounds} — the live popularity signal."""
+    from collections import Counter
+    c = Counter()
+    for (sj,) in con.execute("SELECT shots FROM sg_hole_result"):
+        try:
+            for shot in json.loads(sj):
+                c[shot.get("player_id")] += 1
+        except Exception:
+            pass
+    return c
+
+def _rarity_games_norm(con, player_id):
+    """0–1: career games played, normalized (~1000 games ≈ fully established)."""
+    row = con.execute(
+        "SELECT MAX(value) FROM sg_stat_values WHERE player_id=? AND stat_category='career_games_played'",
+        (player_id,)
+    ).fetchone()
+    g = row[0] if row and row[0] else 0
+    return min(1.0, g / 1000.0)
+
+def _rarity_value_pct(con, stat_category, value):
+    """0–1: percentile of this value among distinct players in the category (1 = the record)."""
+    tp = con.execute(
+        "SELECT COUNT(DISTINCT player_id) FROM sg_stat_values WHERE stat_category=?", (stat_category,)
+    ).fetchone()[0]
+    if not tp:
+        return 0.5
+    below = con.execute(
+        "SELECT COUNT(*) FROM (SELECT player_id, MAX(value) mv FROM sg_stat_values "
+        "WHERE stat_category=? GROUP BY player_id) WHERE mv <= ?", (stat_category, value)
+    ).fetchone()[0]
+    return below / tp
+
+def _pick_commonness(con, player_id, stat_category, value, season_year, usage, umax):
+    """0–1 commonness of a single pick (1 = most common/obvious). The weighted blend."""
+    w = RARITY_WEIGHTS
+    u   = (usage.get(player_id, 0) / umax) if umax > 0 else 0.0
+    rec = _rarity_recency(season_year)
+    gms = _rarity_games_norm(con, player_id)
+    st  = _rarity_value_pct(con, stat_category, value) if stat_category else 0.5
+    return w["usage"] * u + w["recency"] * rec + w["games"] * gms + w["stats"] * st
+
+def player_rarity(player_id, stat_category, value, season_year):
+    """Rarity of ONE pick as an integer 0–99 (lower = rarer). Used for the live shot readout."""
     con = sqlite3.connect(DB_PATH)
     try:
-        user_holes = con.execute(
-            "SELECT shots FROM sg_hole_result WHERE user_id=? AND puzzle_date=?",
-            (user_id, puzzle_date)
-        ).fetchall()
-        user_picks = set()
-        pick_values = []
-        for (sj,) in user_holes:
-            for shot in json.loads(sj):
-                user_picks.add((shot["player_id"], shot["stat_category"]))
-                pick_values.append((shot["stat_category"], shot.get("raw_value", 0)))
-        if not user_picks:
+        usage = _rarity_usage_map(con)
+        umax = max(usage.values()) if usage else 0
+        c = _pick_commonness(con, player_id, stat_category, value, season_year, usage, umax)
+        return max(0, min(99, int(round(c * 99))))
+    finally:
+        con.close()
+
+def calculate_rarity(user_id, puzzle_date):
+    """Average pick rarity over the round's shots, as an integer 0–99 (lower = rarer), using the
+    weighted usage/recency/games/stats blend above. Returns None if the round has no shots."""
+    con = sqlite3.connect(DB_PATH)
+    try:
+        shots = []
+        for (sj,) in con.execute(
+            "SELECT shots FROM sg_hole_result WHERE user_id=? AND puzzle_date=?", (user_id, puzzle_date)
+        ):
+            try:
+                shots += json.loads(sj)
+            except Exception:
+                pass
+        if not shots:
             return None
-
-        total = con.execute(
-            "SELECT COUNT(DISTINCT user_id) FROM sg_round WHERE puzzle_date=? AND completed=1",
-            (puzzle_date,)
-        ).fetchone()[0]
-
-        if total >= PEER_MIN:
-            other_results = con.execute(
-                """SELECT h.user_id, h.shots FROM sg_hole_result h
-                   JOIN sg_round r ON r.user_id=h.user_id AND r.puzzle_date=h.puzzle_date
-                   WHERE h.puzzle_date=? AND r.completed=1 AND h.user_id!=?""",
-                (puzzle_date, user_id)
-            ).fetchall()
-            pick_users = {}
-            for (uid, sj) in other_results:
-                for shot in json.loads(sj):
-                    key = (shot["player_id"], shot["stat_category"])
-                    pick_users.setdefault(key, set()).add(uid)
-            pcts = [len(pick_users.get(p, set())) / (total - 1) * 100 for p in user_picks]
-            return round(sum(pcts) / len(pcts), 1)
-
-        # Population fallback — how deep each pick is in its category by value.
-        pcts = []
-        for cat, val in pick_values:
-            tp = con.execute(
-                "SELECT COUNT(DISTINCT player_id) FROM sg_stat_values WHERE stat_category=?", (cat,)
-            ).fetchone()[0]
-            if not tp:
-                continue
-            at_or_below = con.execute(
-                "SELECT COUNT(*) FROM (SELECT player_id, MAX(value) mv FROM sg_stat_values "
-                "WHERE stat_category=? GROUP BY player_id) WHERE mv <= ?", (cat, val)
-            ).fetchone()[0]
-            pcts.append(at_or_below / tp * 100)
-        return round(sum(pcts) / len(pcts), 1) if pcts else None
+        usage = _rarity_usage_map(con)
+        umax = max(usage.values()) if usage else 0
+        scores = [_pick_commonness(con, s.get("player_id"), s.get("stat_category"),
+                                   s.get("raw_value", 0), s.get("season_year"), usage, umax)
+                  for s in shots]
+        return max(0, min(99, int(round(sum(scores) / len(scores) * 99)))) if scores else None
     finally:
         con.close()
 

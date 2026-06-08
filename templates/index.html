@@ -804,6 +804,17 @@ input::placeholder { color: var(--text-dim); }
   backdrop-filter:blur(6px);
 }
 #shot-reveal-overlay.active { opacity:1; pointer-events:auto; }
+.rev-rarity {
+  position:absolute; top:22px; right:26px; text-align:center;
+  display:flex; flex-direction:column; align-items:center; line-height:1;
+}
+.rev-rarity-num {
+  font-family:'Oswald',sans-serif; font-size:2.6rem; font-weight:700; color:var(--gold-light);
+}
+.rev-rarity-lbl {
+  font-family:'Source Sans 3',sans-serif; font-size:0.6rem; font-weight:600;
+  letter-spacing:0.22em; text-transform:uppercase; color:var(--text-muted); margin-top:2px;
+}
 .rev-player-name {
   font-family:'Oswald',sans-serif; font-size:1.7rem; font-weight:700;
   color:var(--text-primary); letter-spacing:0.08em; text-transform:uppercase;
@@ -903,7 +914,7 @@ input::placeholder { color: var(--text-dim); }
 <div id="screen-lobby" class="screen active">
   <header>
     <div class="header-left">
-      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+      <div><div class="logo" onclick="backToMenu()" style="cursor:pointer" title="Back to menu">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
       <button class="btn-sm" onclick="document.getElementById('htp-modal').classList.add('active')">How to Play</button>
     </div>
     <div class="header-right">
@@ -976,12 +987,11 @@ input::placeholder { color: var(--text-dim); }
 <div id="screen-hole" class="screen">
   <header>
     <div class="header-left">
-      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+      <div><div class="logo" onclick="backToMenu()" style="cursor:pointer" title="Back to menu">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
       <button class="btn-sm" onclick="document.getElementById('htp-modal').classList.add('active')">How to Play</button>
     </div>
     <div class="header-right">
       <a id="hole-admin-link" href="/admin" style="display:none;font-family:'Oswald',sans-serif;font-size:0.74rem;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1px solid var(--border-gold);padding:6px 13px;border-radius:999px;transition:background 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'" onmouseout="this.style.background='transparent'">Admin</a>
-      <button class="btn-sm" onclick="backToMenu()">Menu</button>
       <div class="profile-wrap" style="display:none">
         <button class="profile-btn" onclick="toggleProfileMenu(event)">
           <span class="profile-name"></span>
@@ -1090,12 +1100,11 @@ input::placeholder { color: var(--text-dim); }
 <div id="screen-result" class="screen">
   <header>
     <div class="header-left">
-      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+      <div><div class="logo" onclick="backToMenu()" style="cursor:pointer" title="Back to menu">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
       <button class="btn-sm" onclick="document.getElementById('htp-modal').classList.add('active')">How to Play</button>
     </div>
     <div class="header-right">
       <a id="result-admin-link" href="/admin" style="display:none;font-family:'Oswald',sans-serif;font-size:0.74rem;color:var(--gold);letter-spacing:0.12em;text-transform:uppercase;text-decoration:none;border:1px solid var(--border-gold);padding:6px 13px;border-radius:999px;transition:background 0.15s;" onmouseover="this.style.background='rgba(201,168,76,0.1)'" onmouseout="this.style.background='transparent'">Admin</a>
-      <button class="btn-sm" onclick="returnToLobby()">Menu</button>
       <div class="profile-wrap" style="display:none">
         <button class="profile-btn" onclick="toggleProfileMenu(event)">
           <span class="profile-name"></span>
@@ -1125,7 +1134,7 @@ input::placeholder { color: var(--text-dim); }
     <div class="rarity-display" id="rarity-display" style="display:none">
       <div>
         <div class="rarity-num" id="rarity-num">—</div>
-        <div class="rarity-label">Pick Overlap<br>% of players sharing your picks</div>
+        <div class="rarity-label">Rarity<br>lower = rarer picks (0–99)</div>
       </div>
       <div style="color:var(--text-secondary);font-size:0.88rem;max-width:220px" id="rarity-desc"></div>
     </div>
@@ -1170,7 +1179,7 @@ input::placeholder { color: var(--text-dim); }
 <div id="screen-tutorial" class="screen">
   <header>
     <div class="header-left">
-      <div><div class="logo">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
+      <div><div class="logo" onclick="backToMenu()" style="cursor:pointer" title="Back to menu">Stat<span>Golf</span></div><div class="logo-powered">Powered by Teez</div></div>
     </div>
     <div class="header-right">
       <button class="btn-sm" onclick="skipTutorial()">Skip Tutorial</button>
@@ -1284,13 +1293,12 @@ input::placeholder { color: var(--text-dim); }
   <div class="modal-box" style="max-width:500px;text-align:left">
     <h2 style="text-align:center;margin-bottom:16px">How to Play</h2>
     <div style="display:flex;flex-direction:column;gap:12px;color:var(--text-secondary);font-size:0.92rem;line-height:1.6">
-      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">The Goal</span><br>Each hole has a target yardage. Hit the pin in as few shots as possible by picking real athletes — their stat values become your shot distances.</div>
-      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Taking a Shot</span><br>Select a club, search for an athlete, pick a season. Their stat value for that club's category becomes your distance — you won't see the number until after you swing.</div>
-      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Your Clubs</span><br>Each club uses a <strong style="color:var(--text-primary)">different stat category</strong>. The Driver (career yards, total points) covers big distances. Mid-irons use season stats. The Putter uses precision stats like assists or rings. The <strong style="color:var(--text-primary)">Driver is tee-only</strong> — used once per hole. All other clubs can be reused.</div>
-      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Strategy</span><br>Picking the right athlete matters. A player with 5,000 passing yards covers more ground than one with 2,000. Overshoot the pin and you'll need to chip back. Use precision stats to finish close.</div>
-      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Hazards</span><br><strong style="color:var(--bunker-text)">Bunker</strong> — next shot distance is halved. <strong style="color:var(--water-text)">Water</strong> — take a drop (+1 stroke) or rehit. Hazard yardage ranges are shown on the course.</div>
-      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Scoring</span><br>Par = expected strokes. Complete all 3 holes for your total. The <strong style="color:var(--text-primary)">Rarity</strong> score shows how unique your athlete picks were — lower means rarer.</div>
-      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Gimme</span><br>Get within the gimme range and the hole completes automatically. <em>Amateur: 20 yds · Scratch: 10 yds</em></div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">The Goal</span><br>Each hole has a target yardage. Reach the pin in as few shots as possible by naming real athletes — a player's stat value becomes the distance your shot travels.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Taking a Shot</span><br>Pick a club, search a player, choose a season, and swing. That season's value in the club's stat category is your distance. Each club shows a <strong style="color:var(--text-primary)">hint</strong> — the kind of number a strong pick lands. You won't see the exact distance until the ball flies.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Your Clubs</span><br>Every club is a <strong style="color:var(--text-primary)">different stat category</strong> and gets smaller from Driver to Putter. The <strong style="color:var(--text-primary)">Driver is tee-only</strong> (one big shot to open the hole); the Putter is a small stat to finish close. Other clubs are reusable, but you can only use a given <strong style="color:var(--text-primary)">player once per club</strong>.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Hazards</span><br><strong style="color:var(--bunker-text)">Bunker:</strong> your next shot is halved. <strong style="color:var(--water-text)">Water:</strong> take a drop (+1 stroke) or rehit. Hazard yardage ranges are marked on the course.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Scoring &amp; Rarity</span><br>Par is the expected strokes; play all 3 holes for your total. <strong style="color:var(--text-primary)">Rarity</strong> (0–99, <strong style="color:var(--text-primary)">lower is rarer</strong>) rewards deep cuts — older seasons and obscure, rarely-picked players score low; recent superstars everyone names score high. You'll see each pick's rarity on the swing, and the average on your scorecard.</div>
+      <div><span style="color:var(--gold);font-family:'Oswald',sans-serif;font-weight:700">Gimme</span><br>Land within the gimme and the hole finishes automatically. <em>Amateur: 20 yds · Scratch: 10 yds</em></div>
     </div>
     <div class="modal-actions" style="margin-top:20px">
       <button class="btn btn-primary" onclick="document.getElementById('htp-modal').classList.remove('active')">Got It</button>
@@ -1329,6 +1337,7 @@ input::placeholder { color: var(--text-dim); }
 
 <!-- ═══ SHOT REVEAL OVERLAY ═══════════════════════════════════════════════════ -->
 <div id="shot-reveal-overlay">
+  <div class="rev-rarity"><span class="rev-rarity-num" id="rev-rarity">00</span><span class="rev-rarity-lbl">Rarity</span></div>
   <div class="rev-player-name" id="rev-player"></div>
   <div class="rev-season-cat" id="rev-season-cat"></div>
   <div class="rem-big" id="rev-dist">0</div>
@@ -2052,12 +2061,18 @@ async function confirmShot() {
   revCat.textContent = `${selectedSeason === 9999 ? 'Career' : selectedSeason} · ${catLabel}`;
   revDist.textContent = '?';
   revDist.className = 'rem-big';
+  // Rarity readout: scramble random integers until the shot settles.
+  const revRar = document.getElementById('rev-rarity');
+  const rarTimer = setInterval(() => {
+    revRar.textContent = String(Math.floor(Math.random() * 100)).padStart(2, '0');
+  }, 55);
   overlay.classList.add('active');
 
   // Await API response
   const d = await shotPromise;
 
   if (d.error) {
+    clearInterval(rarTimer);
     overlay.classList.remove('active');
     showToast(d.error);
     btn.disabled = false;
@@ -2078,6 +2093,10 @@ async function confirmShot() {
     }
     requestAnimationFrame(step);
   });
+
+  // Settle the rarity scramble on the chosen player's rarity (integer 0–99).
+  clearInterval(rarTimer);
+  revRar.textContent = (d.shot.rarity != null) ? String(d.shot.rarity).padStart(2, '0') : '—';
 
   // Flash colour based on progress made
   const remaining = d.state ? d.state.remaining : 0;
@@ -2184,12 +2203,12 @@ function showResultScreen(result) {
   // ── Rarity score ──────────────────────────────────────────────────────
   const rarityWrap = document.getElementById('rarity-display');
   if (result.rarity !== null && result.rarity !== undefined) {
-    document.getElementById('rarity-num').textContent = result.rarity + '%';
-    const pct = result.rarity;
-    let desc = pct <= 10 ? 'Extremely rare — your picks were more obscure than 90%+ of players.'
-             : pct <= 30 ? 'Rare picks — you went deep in the record books.'
-             : pct <= 60 ? 'Mixed — some popular picks, some hidden gems.'
-             :              'Common picks — try more obscure athletes for a lower score.';
+    const r = Number(result.rarity);
+    document.getElementById('rarity-num').textContent = String(r);
+    let desc = r <= 15 ? 'Extreme snipes — old, obscure, rarely-picked athletes. Elite.'
+             : r <= 30 ? 'Rare picks — you went deep instead of the obvious names.'
+             : r <= 55 ? 'Mixed — some popular picks, some hidden gems.'
+             :           'Common picks — recent stars everyone knows. Go deeper for a lower score.';
     document.getElementById('rarity-desc').textContent = desc;
     rarityWrap.style.display = '';
   } else {
@@ -2326,7 +2345,7 @@ function _drawShareCard(cv,result){
   put(C.tot, R.score, String(totStr), T, 700);
   // sub row: total score-to-par, and rarity
   put(C.tot,   R.sub, sgn(totDiff), T, 700, totDiff>0?L.diffPos:totDiff<0?L.diffNeg:L.ink);
-  put(C.rarity,R.sub, (result.rarity==null?'—':Math.round(result.rarity)+'%'), T, 700);
+  put(C.rarity,R.sub, (result.rarity==null?'—':String(result.rarity)), T, 700);
 }
 function fmtCardDate(s){ try{ const dt=new Date(s+'T00:00:00'); return dt.toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'}); }catch(e){ return s||''; } }
 
@@ -2538,6 +2557,7 @@ async function tutSwing1() {
   document.getElementById('rev-season-cat').textContent='2013 · Passing Yards (NFL)';
   const rd=document.getElementById('rev-dist');
   rd.textContent='?'; rd.className='rem-big';
+  document.getElementById('rev-rarity').textContent='—';
   overlay.classList.add('active');
   await new Promise(r=>setTimeout(r,600));
   await new Promise(resolve=>{
@@ -2706,6 +2726,7 @@ async function tutSwingFree() {
   document.getElementById('rev-season-cat').textContent=`${tutSeason===9999?'Career':tutSeason} · ${catLabel}`;
   const rd=document.getElementById('rev-dist');
   rd.textContent='?'; rd.className='rem-big';
+  document.getElementById('rev-rarity').textContent='—';
   overlay.classList.add('active');
   await new Promise(r=>setTimeout(r,600));
   await new Promise(resolve=>{
