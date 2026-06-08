@@ -706,6 +706,9 @@ input::placeholder { color: var(--text-dim); }
 
 /* ── RESPONSIVE ───────────────────────────────────────── */
 @media (max-width: 660px) {
+  /* Scale the whole rem-based UI down a notch on phones (root + base text). */
+  html { font-size: 15px; }
+  body { font-size: 15px; }
   header { height:56px; padding:0 14px; }
   .logo { font-size:1.65rem; }
   .main { padding:14px 12px; }
